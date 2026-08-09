@@ -17,7 +17,7 @@ To install `git-center` search for _git-center_ in the Install pane of the Lumin
 
 ## Commands
 
-Commands available in `atom-workspace`:
+Commands available in `lumine-workspace`:
 
 - `git-center:select-repository`: pick the active repository,
 - `git-center:select-branch`: pick a branch of the active repository to check out,

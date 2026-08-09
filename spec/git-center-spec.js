@@ -43,7 +43,7 @@ function chipClass(element, text) {
 
 async function initializeRepository(prefix) {
   const workingDirectory = makeWorkdir(prefix);
-  const repository = await atom.repositories.initialize(workingDirectory, {
+  const repository = await lumine.repositories.initialize(workingDirectory, {
     initialBranch: "main",
   });
   const operations = repository.getOperations();
@@ -134,22 +134,22 @@ describe("git-center", () => {
   let repoB;
 
   beforeEach(async () => {
-    await atom.packages.activatePackage("status-bar");
-    mainModule = (await atom.packages.activatePackage("git-center")).mainModule;
+    await lumine.packages.activatePackage("status-bar");
+    mainModule = (await lumine.packages.activatePackage("git-center")).mainModule;
 
     repoA = await initializeRepository("git-center-a-");
     repoB = await initializeRepository("git-center-b-");
-    atom.repositories.setActiveRepository(repoA.repository);
+    lumine.repositories.setActiveRepository(repoA.repository);
     await repoA.repository.refreshStatusSnapshot();
     await repoB.repository.refreshStatusSnapshot();
   });
 
   afterEach(async () => {
-    atom.repositories.setActiveRepository(null);
-    atom.repositories.forget(repoA.repository);
-    atom.repositories.forget(repoB.repository);
-    await atom.packages.deactivatePackage("git-center");
-    await atom.packages.deactivatePackage("status-bar");
+    lumine.repositories.setActiveRepository(null);
+    lumine.repositories.forget(repoA.repository);
+    lumine.repositories.forget(repoB.repository);
+    await lumine.packages.deactivatePackage("git-center");
+    await lumine.packages.deactivatePackage("status-bar");
   });
 
   it("shows the active repository and branch in the status bar", () => {
@@ -162,21 +162,21 @@ describe("git-center", () => {
     expect(repositoryView.nameLabel.textContent).toBe(path.basename(repoA.workingDirectory));
     expect(branchView.branchLabel.textContent).toBe("main");
 
-    atom.repositories.setActiveRepository(repoB.repository);
+    lumine.repositories.setActiveRepository(repoB.repository);
     expect(repositoryView.nameLabel.textContent).toBe(path.basename(repoB.workingDirectory));
 
-    atom.repositories.setActiveRepository(repoB.repository, { pin: true });
+    lumine.repositories.setActiveRepository(repoB.repository, { pin: true });
     expect(repositoryView.icon.classList.contains("icon-lock")).toBe(true);
     expect(repositoryView.icon.classList.contains("icon-repo")).toBe(false);
-    atom.repositories.setActiveRepository(null);
+    lumine.repositories.setActiveRepository(null);
   });
 
   it("keeps the repository tile visible but hides the branch tile without a repository", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const branchView = mainModule.branchStatusView;
     const outsideDir = makeWorkdir("git-center-outside-");
-    spyOn(atom.repositories, "getActiveRepository").andReturn(null);
-    spyOn(atom.repositories, "getActiveRepositoryContext").andReturn({
+    spyOn(lumine.repositories, "getActiveRepository").andReturn(null);
+    spyOn(lumine.repositories, "getActiveRepositoryContext").andReturn({
       repository: null,
       workingDirectory: outsideDir,
       pinned: false,
@@ -192,8 +192,8 @@ describe("git-center", () => {
     expect(branchView.element.style.display).toBe("none");
 
     // Returning to a repository clears the no-repo state and restores the tile.
-    atom.repositories.getActiveRepository.andReturn(repoA.repository);
-    atom.repositories.getActiveRepositoryContext.andReturn({
+    lumine.repositories.getActiveRepository.andReturn(repoA.repository);
+    lumine.repositories.getActiveRepositoryContext.andReturn({
       repository: repoA.repository,
       workingDirectory: repoA.workingDirectory,
       pinned: false,
@@ -209,36 +209,36 @@ describe("git-center", () => {
   it("cycles repositories with the mouse wheel and toggles the pin with middle click", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const repositories = [repoA.repository, repoB.repository];
-    spyOn(atom.repositories, "getRepositories").andReturn(repositories);
+    spyOn(lumine.repositories, "getRepositories").andReturn(repositories);
 
     const wheel = (deltaY) =>
       repositoryView.element.dispatchEvent(new WheelEvent("wheel", { deltaY, cancelable: true }));
 
     wheel(120);
-    const second = atom.repositories.getActiveRepository();
+    const second = lumine.repositories.getActiveRepository();
     expect(repositories).toContain(second);
     expect(second).not.toBe(repoA.repository);
 
     wheel(120);
-    expect(atom.repositories.getActiveRepository()).toBe(repoA.repository);
+    expect(lumine.repositories.getActiveRepository()).toBe(repoA.repository);
 
     wheel(-120);
-    expect(atom.repositories.getActiveRepository()).toBe(second);
+    expect(lumine.repositories.getActiveRepository()).toBe(second);
 
     // Small trackpad deltas accumulate instead of switching per event.
     wheel(20);
-    expect(atom.repositories.getActiveRepository()).toBe(second);
+    expect(lumine.repositories.getActiveRepository()).toBe(second);
 
     const middleClick = () =>
       repositoryView.element.dispatchEvent(
         new MouseEvent("auxclick", { button: 1, cancelable: true }),
       );
-    expect(atom.repositories.isActiveRepositoryPinned()).toBe(false);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
     middleClick();
-    expect(atom.repositories.isActiveRepositoryPinned()).toBe(true);
-    expect(atom.repositories.getActiveRepository()).toBe(second);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(true);
+    expect(lumine.repositories.getActiveRepository()).toBe(second);
     middleClick();
-    expect(atom.repositories.isActiveRepositoryPinned()).toBe(false);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
   });
 
   it("switches the active repository through the repository picker", async () => {
@@ -271,24 +271,24 @@ describe("git-center", () => {
     expect(target).toBeTruthy();
     listView.props.didConfirmSelection(target);
 
-    expect(atom.repositories.getActiveRepository()).toBe(repoB.repository);
-    expect(atom.repositories.isActiveRepositoryPinned()).toBe(true);
+    expect(lumine.repositories.getActiveRepository()).toBe(repoB.repository);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(true);
     expect(listView.isVisible()).toBe(false);
 
     await mainModule.getRepositoryListView().toggle();
     const auto = listView.props.items.find((item) => item.auto);
     listView.props.didConfirmSelection(auto);
-    expect(atom.repositories.isActiveRepositoryPinned()).toBe(false);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
   });
 
   it("shows a loading status while the rescan item scans repositories", async () => {
     let finishScan;
-    spyOn(atom.repositories, "setProjectRoots");
-    const scan = spyOn(atom.repositories, "scanProjectRoots").andReturn(
+    spyOn(lumine.repositories, "setProjectRoots");
+    const scan = spyOn(lumine.repositories, "scanProjectRoots").andReturn(
       new Promise((resolve) => (finishScan = resolve)),
     );
     const rescanFinished = new Promise((resolve) => {
-      const subscription = atom.repositories.onDidFinishRescan((event) => {
+      const subscription = lumine.repositories.onDidFinishRescan((event) => {
         subscription.dispose();
         resolve(event);
       });
@@ -383,15 +383,18 @@ describe("git-center", () => {
   it("lists local branches, remote branches, and tags with last-commit details", async () => {
     const operations = repoA.repository.getOperations();
     const remoteDir = makeWorkdir("git-center-checkout-remote-");
-    await atom.repositories.executeGit(["init", "--bare", "--initial-branch=main", "."], remoteDir);
+    await lumine.repositories.executeGit(
+      ["init", "--bare", "--initial-branch=main", "."],
+      remoteDir,
+    );
     await operations.addRemote("origin", remoteDir);
     await operations.push("origin", "main", { setUpstream: true });
 
     await operations.checkout("remote-only", { createNew: true });
     await operations.push("origin", "remote-only");
     await operations.checkout("main");
-    await atom.repositories.executeGit(["branch", "-D", "remote-only"], repoA.workingDirectory);
-    await atom.repositories.executeGit(
+    await lumine.repositories.executeGit(["branch", "-D", "remote-only"], repoA.workingDirectory);
+    await lumine.repositories.executeGit(
       ["tag", "-a", "v1.0.0", "-m", "Release v1.0.0"],
       repoA.workingDirectory,
     );
@@ -464,7 +467,7 @@ describe("git-center", () => {
     });
     spyOn(branchListView, "requestBranchRefresh").andCallThrough();
 
-    await atom.repositories.executeGit(["branch", "feature"], repoA.workingDirectory);
+    await lumine.repositories.executeGit(["branch", "feature"], repoA.workingDirectory);
     await repoA.repository.refreshRefsSnapshot();
     expect(branchListView.requestBranchRefresh).toHaveBeenCalled();
     await branchListView.requestBranchRefresh.calls.mostRecent().returnValue;
@@ -510,7 +513,7 @@ describe("git-center", () => {
     fs.writeFileSync(path.join(repoA.workingDirectory, "untracked.txt"), "new\n");
     await repoA.repository.refreshStatusSnapshot();
 
-    jasmine.attachToDOM(atom.workspace.getElement());
+    jasmine.attachToDOM(lumine.workspace.getElement());
     await mainModule.getRepositoryListView().toggle();
     const listView = mainModule.repositoryListView.selectListView;
     jasmine.attachToDOM(listView.element);
@@ -543,7 +546,10 @@ describe("git-center", () => {
   it("shows upstream divergence once a branch is tracking a remote", async () => {
     const operations = repoA.repository.getOperations();
     const remoteDir = makeWorkdir("git-center-remote-");
-    await atom.repositories.executeGit(["init", "--bare", "--initial-branch=main", "."], remoteDir);
+    await lumine.repositories.executeGit(
+      ["init", "--bare", "--initial-branch=main", "."],
+      remoteDir,
+    );
     await operations.addRemote("origin", remoteDir);
     await operations.push("origin", "main", { setUpstream: true });
 
@@ -585,12 +591,15 @@ describe("git-center", () => {
     // `gone`, which is why the tile reads its upstream from there.
     const operations = repoA.repository.getOperations();
     const remoteDir = makeWorkdir("git-center-gone-remote-");
-    await atom.repositories.executeGit(["init", "--bare", "--initial-branch=main", "."], remoteDir);
+    await lumine.repositories.executeGit(
+      ["init", "--bare", "--initial-branch=main", "."],
+      remoteDir,
+    );
     await operations.addRemote("origin", remoteDir);
     await operations.push("origin", "main", { setUpstream: true });
 
     // Delete the branch on the remote and prune, leaving the tracking config.
-    await atom.repositories.executeGit(["branch", "-D", "main"], remoteDir);
+    await lumine.repositories.executeGit(["branch", "-D", "main"], remoteDir);
     await operations.fetch("origin", null, { prune: true });
     await repoA.repository.refreshStatusSnapshot();
     await repoA.repository.refreshRefsSnapshot();
@@ -615,18 +624,21 @@ describe("git-center", () => {
     const sorted = [repoA.repository, repoB.repository].sort((a, b) =>
       path.basename(a.getWorkingDirectory()).localeCompare(path.basename(b.getWorkingDirectory())),
     );
-    spyOn(atom.repositories, "getRepositories").andReturn(sorted);
-    spyOn(atom.repositories, "getActiveRepository").andReturn(null);
-    spyOn(atom.repositories, "setActiveRepository");
+    spyOn(lumine.repositories, "getRepositories").andReturn(sorted);
+    spyOn(lumine.repositories, "getActiveRepository").andReturn(null);
+    spyOn(lumine.repositories, "setActiveRepository");
 
     // Stepping off "no active repository" must not skip past the far end.
     repositoryView.cycleRepository(-1);
-    expect(atom.repositories.setActiveRepository).toHaveBeenCalledWith(sorted[sorted.length - 1], {
-      pin: false,
-    });
+    expect(lumine.repositories.setActiveRepository).toHaveBeenCalledWith(
+      sorted[sorted.length - 1],
+      {
+        pin: false,
+      },
+    );
 
     repositoryView.cycleRepository(1);
-    expect(atom.repositories.setActiveRepository).toHaveBeenCalledWith(sorted[0], { pin: false });
+    expect(lumine.repositories.setActiveRepository).toHaveBeenCalledWith(sorted[0], { pin: false });
   });
 
   it("leaves branch actions on one line and shows commit details below refs", async () => {
@@ -682,37 +694,37 @@ describe("git-center", () => {
   });
 
   it("builds a breadcrumb trail through the create-from flow and navigates back", async () => {
-    jasmine.attachToDOM(atom.workspace.getElement());
+    jasmine.attachToDOM(lumine.workspace.getElement());
     const branchListView = mainModule.getBranchListView();
     const operations = repoA.repository.getOperations();
     spyOn(operations, "checkout").andReturn(Promise.resolve());
 
     await branchListView.toggle();
     expect(branchListView.selectListView.isVisible()).toBe(true);
-    expect(atom.workspace.getModalTrail()).toEqual([]);
+    expect(lumine.workspace.getModalTrail()).toEqual([]);
 
     // Entering the reference list adopts the visible branch list as the root.
     await branchListView.showReferenceList("create-from", repoA.repository);
     expect(branchListView.selectListView.isVisible()).toBe(false);
     expect(branchListView.referenceListView.isVisible()).toBe(true);
-    expect(atom.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
+    expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
 
     const itemsBefore = branchListView.referenceListView.props.items;
     const main = itemsBefore.find((item) => item.reference === "main");
     branchListView.confirmReference(main);
     expect(branchListView.branchNameDialog.inputDialogView.isVisible()).toBe(true);
-    expect(atom.workspace.getModalTrail()).toEqual(["Branches", "Create from", "main"]);
+    expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from", "main"]);
 
     // Going back re-shows the reference list with its items intact - no reload.
-    expect(atom.workspace.popModal()).toBe(true);
+    expect(lumine.workspace.popModal()).toBe(true);
     expect(branchListView.referenceListView.isVisible()).toBe(true);
     expect(branchListView.referenceListView.props.items).toBe(itemsBefore);
-    expect(atom.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
+    expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
 
     // Escape cancels the visible step, which ends the whole trail.
-    atom.commands.dispatch(branchListView.referenceListView.element, "core:cancel");
+    lumine.commands.dispatch(branchListView.referenceListView.element, "core:cancel");
     expect(branchListView.referenceListView.isVisible()).toBe(false);
     expect(branchListView.selectListView.isVisible()).toBe(false);
-    expect(atom.workspace.getModalTrail()).toEqual([]);
+    expect(lumine.workspace.getModalTrail()).toEqual([]);
   });
 });
