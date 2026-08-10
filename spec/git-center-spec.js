@@ -175,8 +175,8 @@ describe("git-center", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const branchView = mainModule.branchStatusView;
     const outsideDir = makeWorkdir("git-center-outside-");
-    spyOn(lumine.repositories, "getActiveRepository").andReturn(null);
-    spyOn(lumine.repositories, "getActiveRepositoryContext").andReturn({
+    spyOn(lumine.repositories, "getActiveRepository").and.returnValue(null);
+    spyOn(lumine.repositories, "getActiveRepositoryContext").and.returnValue({
       repository: null,
       workingDirectory: outsideDir,
       pinned: false,
@@ -192,8 +192,8 @@ describe("git-center", () => {
     expect(branchView.element.style.display).toBe("none");
 
     // Returning to a repository clears the no-repo state and restores the tile.
-    lumine.repositories.getActiveRepository.andReturn(repoA.repository);
-    lumine.repositories.getActiveRepositoryContext.andReturn({
+    lumine.repositories.getActiveRepository.and.returnValue(repoA.repository);
+    lumine.repositories.getActiveRepositoryContext.and.returnValue({
       repository: repoA.repository,
       workingDirectory: repoA.workingDirectory,
       pinned: false,
@@ -209,7 +209,7 @@ describe("git-center", () => {
   it("cycles repositories with the mouse wheel and toggles the pin with middle click", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const repositories = [repoA.repository, repoB.repository];
-    spyOn(lumine.repositories, "getRepositories").andReturn(repositories);
+    spyOn(lumine.repositories, "getRepositories").and.returnValue(repositories);
 
     const wheel = (deltaY) =>
       repositoryView.element.dispatchEvent(new WheelEvent("wheel", { deltaY, cancelable: true }));
@@ -284,7 +284,7 @@ describe("git-center", () => {
   it("shows a loading status while the rescan item scans repositories", async () => {
     let finishScan;
     spyOn(lumine.repositories, "setProjectRoots");
-    const scan = spyOn(lumine.repositories, "scanProjectRoots").andReturn(
+    const scan = spyOn(lumine.repositories, "scanProjectRoots").and.returnValue(
       new Promise((resolve) => (finishScan = resolve)),
     );
     const rescanFinished = new Promise((resolve) => {
@@ -331,7 +331,7 @@ describe("git-center", () => {
       value: 37,
       writable: true,
     });
-    spyOn(repositoryListView, "requestRefresh").andCallThrough();
+    spyOn(repositoryListView, "requestRefresh").and.callThrough();
 
     fs.writeFileSync(path.join(repoA.workingDirectory, "new.txt"), "new\n");
     await repoA.repository.refreshStatusSnapshot();
@@ -441,7 +441,7 @@ describe("git-center", () => {
       `Git Center Specs • ${shortHead} • Initial commit`,
     );
 
-    spyOn(operations, "checkout").andReturn(Promise.resolve());
+    spyOn(operations, "checkout").and.returnValue(Promise.resolve());
     branchListView.confirmCheckoutItem(refs.find((item) => item.branch === "origin/main"));
     expect(operations.checkout).not.toHaveBeenCalled();
 
@@ -465,7 +465,7 @@ describe("git-center", () => {
       value: 53,
       writable: true,
     });
-    spyOn(branchListView, "requestBranchRefresh").andCallThrough();
+    spyOn(branchListView, "requestBranchRefresh").and.callThrough();
 
     await lumine.repositories.executeGit(["branch", "feature"], repoA.workingDirectory);
     await repoA.repository.refreshRefsSnapshot();
@@ -624,8 +624,8 @@ describe("git-center", () => {
     const sorted = [repoA.repository, repoB.repository].sort((a, b) =>
       path.basename(a.getWorkingDirectory()).localeCompare(path.basename(b.getWorkingDirectory())),
     );
-    spyOn(lumine.repositories, "getRepositories").andReturn(sorted);
-    spyOn(lumine.repositories, "getActiveRepository").andReturn(null);
+    spyOn(lumine.repositories, "getRepositories").and.returnValue(sorted);
+    spyOn(lumine.repositories, "getActiveRepository").and.returnValue(null);
     spyOn(lumine.repositories, "setActiveRepository");
 
     // Stepping off "no active repository" must not skip past the far end.
@@ -664,7 +664,7 @@ describe("git-center", () => {
   it("creates branches from HEAD or another ref and checks out detached", async () => {
     const branchListView = mainModule.getBranchListView();
     const operations = repoA.repository.getOperations();
-    spyOn(operations, "checkout").andReturn(Promise.resolve());
+    spyOn(operations, "checkout").and.returnValue(Promise.resolve());
 
     branchListView.performAction("create");
     const nameInputDialogView = branchListView.branchNameDialog.inputDialogView;
@@ -697,7 +697,7 @@ describe("git-center", () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
     const branchListView = mainModule.getBranchListView();
     const operations = repoA.repository.getOperations();
-    spyOn(operations, "checkout").andReturn(Promise.resolve());
+    spyOn(operations, "checkout").and.returnValue(Promise.resolve());
 
     await branchListView.toggle();
     expect(branchListView.selectListView.isVisible()).toBe(true);
