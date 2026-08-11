@@ -44,13 +44,15 @@
   }
 
   /* A branch held by another worktree cannot be checked out here, and a
-     worktree Git would drop on the next prune is worth the same warning. */
-  .git-center-branch-worktree,
-  .git-center-worktree-locked {
+     worktree Git would drop on the next prune is worth the same warning.
+     Qualified with `.badge` so these outrank the theme's own badge color,
+     which the zero-specificity guard alone does not. */
+  .badge.git-center-branch-worktree,
+  .badge.git-center-worktree-locked {
     color: var(--text-color-warning);
   }
 
-  .git-center-worktree-prunable {
+  .badge.git-center-worktree-prunable {
     color: var(--text-color-error);
   }
 }
