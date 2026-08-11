@@ -730,6 +730,23 @@ describe("git-center", () => {
       expect(chipTexts(rows[3].querySelector(".trailing-block"))).toContain("feature");
     });
 
+    // Every `update({items})` re-filters, and re-filtering selects the first
+    // row. A status snapshot arriving while the list is open is ambient, not
+    // user navigation, so it must leave the highlight where the user put it —
+    // otherwise an item action lands on a row nobody chose.
+    it("keeps the highlighted row across an ambient refresh", async () => {
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      const listView = worktreeListView.selectListView;
+      listView.selectItem(listView.items.find((entry) => entry.path === worktreePath));
+      expect(listView.getSelectedItem().path).toBe(worktreePath);
+
+      await repoA.repository.refreshStatusSnapshot();
+      await worktreeListView.requestRefresh();
+
+      expect(listView.getSelectedItem().path).toBe(worktreePath);
+    });
+
     it("opens the selected worktree in this window, alongside it, or in a new window", async () => {
       spyOn(lumine.project, "setState");
       spyOn(lumine.project, "addPaths");
@@ -758,8 +775,10 @@ describe("git-center", () => {
       const worktreeListView = mainModule.getWorktreeListView();
       await worktreeListView.toggle();
       const listView = worktreeListView.selectListView;
-      const item = listView.props.items.find((entry) => entry.path === worktreePath);
-      listView.selectItem(item);
+      const selectWorktree = () =>
+        listView.selectItem(listView.items.find((entry) => entry.path === worktreePath));
+      selectWorktree();
+      const item = listView.getSelectedItem();
 
       lumine.commands.dispatch(listView.element, "git-center:lock-worktree");
       const dialog = worktreeListView.textDialog.inputDialogView;
@@ -860,6 +879,24 @@ describe("git-center", () => {
       expect(fs.existsSync(path.join(created, "file.txt"))).toBe(true);
       expect(repoA.repository.getRefsSnapshot().worktrees.map((entry) => entry.branch)).toContain(
         "refs/heads/topic",
+      );
+    });
+
+    // Given only a path, Git checks out an existing branch of that name rather
+    // than failing. Passing `-b` here would make this `fatal: a branch named
+    // 'spare' already exists` for a perfectly ordinary thing to want.
+    it("checks out an existing branch when the new worktree is named after one", async () => {
+      const operations = repoA.repository.getOperations();
+      await operations.checkout("spare", { createNew: true });
+      await operations.checkout("main");
+      const worktreeListView = mainModule.getWorktreeListView();
+
+      const created = path.join(makeWorkdir("git-center-existing-"), "spare");
+      expect(await worktreeListView.createWorktree(repoA.repository, created)).toBe(true);
+      await repoA.repository.refreshRefsSnapshot();
+
+      expect(repoA.repository.getRefsSnapshot().worktrees.map((entry) => entry.branch)).toContain(
+        "refs/heads/spare",
       );
     });
   });
