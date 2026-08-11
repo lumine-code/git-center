@@ -1,0 +1,30 @@
+{
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "Git Center",
+          "submenu": [
+            {
+              "label": "Select Repository",
+              "command": "git-center:select-repository"
+            },
+            {
+              "label": "Select Branch",
+              "command": "git-center:select-branch"
+            },
+            {
+              "label": "Select Worktree",
+              "command": "git-center:select-worktree"
+            },
+            {
+              "label": "Toggle Lock",
+              "command": "git-center:toggle-lock"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

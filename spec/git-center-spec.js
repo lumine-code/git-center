@@ -55,6 +55,16 @@ async function initializeRepository(prefix) {
   return { workingDirectory, repository };
 }
 
+// A linked worktree of an existing repository, on a branch of its own. The refs
+// snapshot is refreshed here because a worktree operation reports "refs", which
+// the registry refreshes detached — the operation resolves before it lands.
+async function addWorktree(repository, prefix, branch) {
+  const worktreePath = path.join(makeWorkdir(prefix), branch);
+  await repository.getOperations().worktreeAdd(worktreePath, { branch });
+  await repository.refreshRefsSnapshot();
+  return worktreePath;
+}
+
 describe("git-center status summary", () => {
   it("counts each change kind and ignores ignored entries", () => {
     const summary = summarizeStatus(
@@ -691,6 +701,167 @@ describe("git-center", () => {
       branchListView.referenceListView.props.items.find((item) => item.reference === "main"),
     );
     expect(operations.checkout).toHaveBeenCalledWith("main", { detach: true });
+  });
+
+  describe("worktrees", () => {
+    let worktreePath;
+
+    beforeEach(async () => {
+      worktreePath = await addWorktree(repoA.repository, "git-center-wt-", "feature");
+    });
+
+    it("lists every worktree with its branch, and marks the current one", async () => {
+      await mainModule.getWorktreeListView().toggle();
+      const listView = mainModule.worktreeListView.selectListView;
+
+      const worktrees = listView.props.items.filter((item) => !item.action);
+      expect(worktrees.map((item) => item.branch)).toEqual(["main", "feature"]);
+      expect(worktrees.map((item) => item.current)).toEqual([true, false]);
+      expect(worktrees[1].path).toBe(worktreePath);
+
+      const rows = Array.from(
+        listView.element.querySelectorAll(".list-group > li:not(.select-list-separator)"),
+      );
+      // The two action rows stay compact; a worktree carries its path below.
+      expect(rows[0].classList.contains("two-lines")).toBe(false);
+      expect(rows[2].querySelector(".secondary-line").textContent).toBe(repoA.workingDirectory);
+      expect(rows[3].querySelector(".secondary-line").textContent).toBe(worktreePath);
+      expect(chipTexts(rows[2].querySelector(".trailing-block"))).toContain("current");
+      expect(chipTexts(rows[3].querySelector(".trailing-block"))).toContain("feature");
+    });
+
+    it("opens the selected worktree in this window, alongside it, or in a new window", async () => {
+      spyOn(lumine.project, "setState");
+      spyOn(lumine.project, "addPaths");
+      spyOn(lumine.application, "openWindow");
+
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      const item = worktreeListView.selectListView.props.items.find(
+        (entry) => entry.path === worktreePath,
+      );
+
+      worktreeListView.selectListView.props.didConfirmSelection(item);
+      expect(lumine.project.setState).toHaveBeenCalledWith([worktreePath]);
+
+      worktreeListView.openSelected(item, "add");
+      expect(lumine.project.addPaths).toHaveBeenCalledWith([worktreePath], { mustExist: true });
+
+      worktreeListView.openSelected(item, "new-window");
+      expect(lumine.application.openWindow).toHaveBeenCalledWith({
+        pathsToOpen: [worktreePath],
+        newWindow: true,
+      });
+    });
+
+    it("locks, unlocks, and removes a worktree through the item actions", async () => {
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      const listView = worktreeListView.selectListView;
+      const item = listView.props.items.find((entry) => entry.path === worktreePath);
+      listView.selectItem(item);
+
+      lumine.commands.dispatch(listView.element, "git-center:lock-worktree");
+      const dialog = worktreeListView.textDialog.inputDialogView;
+      dialog.refs.queryEditor.setText("held for the spec");
+      await dialog.props.didConfirm();
+      await repoA.repository.refreshRefsSnapshot();
+      const locked = repoA.repository
+        .getRefsSnapshot()
+        .worktrees.find((entry) => entry.branch === "refs/heads/feature");
+      expect(locked.locked).toBe(true);
+      expect(locked.lockedReason).toBe("held for the spec");
+
+      await worktreeListView.unlockSelected(item);
+      await repoA.repository.refreshRefsSnapshot();
+      expect(
+        repoA.repository
+          .getRefsSnapshot()
+          .worktrees.find((entry) => entry.branch === "refs/heads/feature").locked,
+      ).toBe(false);
+
+      await worktreeListView.removeSelected(item);
+      await repoA.repository.refreshRefsSnapshot();
+      expect(repoA.repository.getRefsSnapshot().worktrees.map((entry) => entry.branch)).toEqual([
+        "refs/heads/main",
+      ]);
+    });
+
+    // Git allows one worktree per branch and fails the checkout outright, so
+    // the row has to say so before Enter rather than after.
+    it("marks a branch held by another worktree and routes to it instead of checking out", async () => {
+      const operations = repoA.repository.getOperations();
+      spyOn(operations, "checkout").and.returnValue(Promise.resolve());
+      spyOn(lumine.notifications, "addWarning");
+
+      const branchListView = mainModule.getBranchListView();
+      await branchListView.toggle();
+      const feature = branchListView.selectListView.props.items.find(
+        (item) => item.branch === "feature",
+      );
+      expect(feature.worktree.path).toBe(worktreePath);
+      expect(feature.current).toBe(false);
+
+      const rows = Array.from(
+        branchListView.selectListView.element.querySelectorAll(
+          ".list-group > li:not(.select-list-separator)",
+        ),
+      );
+      const featureRow = rows.find((row) =>
+        row.querySelector(".primary-text").textContent.trim().startsWith("feature"),
+      );
+      expect(chipTexts(featureRow.querySelector(".trailing-block"))).toContain(
+        path.basename(worktreePath),
+      );
+
+      branchListView.confirmCheckoutItem(feature);
+      expect(operations.checkout).not.toHaveBeenCalled();
+      const [message, options] = lumine.notifications.addWarning.calls.mostRecent().args;
+      expect(message).toBe("'feature' is checked out in another worktree");
+      expect(options.description).toContain(worktreePath);
+      expect(options.buttons.map((button) => button.text)).toEqual([
+        "Open Worktree",
+        "Open in New Window",
+      ]);
+    });
+
+    // The branch this worktree holds is still the branch this worktree is on,
+    // so the current row must never be mistaken for one held elsewhere.
+    it("does not flag the branch of the repository being viewed", async () => {
+      const branchListView = mainModule.getBranchListView();
+      await branchListView.toggle();
+      const main = branchListView.selectListView.props.items.find((item) => item.branch === "main");
+      expect(main.current).toBe(true);
+      expect(main.worktree).toBeNull();
+    });
+
+    it("creates a worktree from the picker as a flow step", async () => {
+      jasmine.attachToDOM(lumine.workspace.getElement());
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      expect(lumine.workspace.getModalTrail()).toEqual([]);
+
+      await worktreeListView.showCreateDialog(repoA.repository);
+      expect(lumine.workspace.getModalTrail()).toEqual(["Worktrees", "New worktree"]);
+      const dialog = worktreeListView.textDialog.inputDialogView;
+      // The suggestion is a sibling of the repository named after its head.
+      expect(dialog.getQuery()).toBe(
+        path.join(
+          path.dirname(repoA.workingDirectory),
+          `${path.basename(repoA.workingDirectory)}-main`,
+        ),
+      );
+
+      const created = path.join(makeWorkdir("git-center-created-"), "topic");
+      dialog.refs.queryEditor.setText(created);
+      await dialog.props.didConfirm();
+      await repoA.repository.refreshRefsSnapshot();
+
+      expect(fs.existsSync(path.join(created, "file.txt"))).toBe(true);
+      expect(repoA.repository.getRefsSnapshot().worktrees.map((entry) => entry.branch)).toContain(
+        "refs/heads/topic",
+      );
+    });
   });
 
   it("builds a breadcrumb trail through the create-from flow and navigates back", async () => {

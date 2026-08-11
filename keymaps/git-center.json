@@ -1,0 +1,20 @@
+{
+  // Part of the `alt-g` family, shared with git-panel (alt-g g), github-panel
+  // (alt-g h), git-diff, git-command and open-repository. `s` for switch —
+  // Git's own verb — because `b` is open-repository's blame, and `r` its
+  // repository page. The repository picker and the lock keep to the menu and
+  // the command palette rather than take a letter that says nothing.
+  "lumine-workspace": {
+    "alt-g s": "git-center:select-branch",
+    "alt-g w": "git-center:select-worktree"
+  },
+
+  // The two other ways to open the selected worktree. Locking, moving and
+  // removing it stay on the item-actions list (F12), which labels them: they
+  // are rare, one is destructive, and every free `alt-<letter>` here would be
+  // some other package's reveal key taken for as long as this list has focus.
+  ".git-center-worktree-list": {
+    "alt-enter": "git-center:open-worktree-in-new-window",
+    "shift-enter": "git-center:add-worktree-to-window"
+  }
+}

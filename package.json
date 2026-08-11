@@ -19,7 +19,9 @@
   "license": "MIT",
   "main": "./lib/main",
   "files": [
+    "keymaps",
     "lib",
+    "menus",
     "spec",
     "styles"
   ],
@@ -27,7 +29,8 @@
     "lumine": "^1.0.0"
   },
   "backgroundTips": [
-    "{% if keys['git-center:select-branch'] %}You can check out another branch of the active repository with {{ 'git-center:select-branch' | keystroke }}{% else %}The status bar names the active repository and branch, and clicking either one switches it.{% endif %}"
+    "You can check out another branch of the active repository with {{ 'git-center:select-branch' | keystroke }}",
+    "You can open any worktree of the active repository with {{ 'git-center:select-worktree' | keystroke }}"
   ],
   "scripts": {
     "test": "lumine --test spec",

@@ -42,4 +42,15 @@
   .git-center-gone {
     color: var(--text-color-warning);
   }
+
+  /* A branch held by another worktree cannot be checked out here, and a
+     worktree Git would drop on the next prune is worth the same warning. */
+  .git-center-branch-worktree,
+  .git-center-worktree-locked {
+    color: var(--text-color-warning);
+  }
+
+  .git-center-worktree-prunable {
+    color: var(--text-color-error);
+  }
 }
