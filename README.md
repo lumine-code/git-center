@@ -15,7 +15,7 @@ Ahead and behind counts compare local refs only; nothing here fetches on your be
 
 ## Installation
 
-To install `git-center` search for _git-center_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/git-center`.
+To install `git-center` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/git-center`.
 
 ## Commands
 
@@ -37,7 +37,7 @@ Commands available in the worktree picker:
 
 ## Services
 
-- **status-bar** (`^1.0.0`): consumed to display the repository and branch tiles.
+- `status-bar`: consumed to display the repository and branch tiles.
 
 ## Contributing
 
