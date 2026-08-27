@@ -11,7 +11,7 @@ Ahead and behind counts compare local refs only; nothing here fetches on your be
 - **Worktree picker**: lists every worktree of the active repository with its branch, working-tree counts, and lock or prune state, and opens one in this window, alongside it, or in a new window; worktrees can also be created, moved, locked, removed, and pruned from the same list.
 - **Cross-worktree branches**: a branch already checked out in another worktree is marked as such and offers to open that worktree, since Git allows one worktree per branch and would refuse the checkout.
 - **Filterable pickers**: clicking a tile opens a list for switching repositories or checking out branches, with working-tree counts and upstream drift on the rows that have them.
-- **Quick switching**: the mouse wheel over the repository tile cycles through repositories, middle click locks or unlocks the current selection, and the repository picker's rescan item scans the project roots again.
+- **Quick switching**: the mouse wheel over the repository tile cycles through repositories, middle click locks or unlocks the current selection, and the repository picker's update item finds repositories again and refreshes their Git state.
 
 ## Installation
 

@@ -259,7 +259,7 @@ describe("git-center", () => {
     const items = listView.props.items;
     expect(items[0].auto).toBe(true);
     expect(items[0].repoName).toBe("Auto");
-    expect(items[1].rescan).toBe(true);
+    expect(items[1].update).toBe(true);
     expect(items[2].repository).toBe(repoA.repository);
     const autoElement = Array.from(listView.element.querySelectorAll(".list-group li")).find(
       (element) => element.textContent.includes("Auto"),
@@ -291,7 +291,7 @@ describe("git-center", () => {
     expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
   });
 
-  it("shows a loading status while the rescan item scans repositories", async () => {
+  it("shows a loading status while the update item scans repositories", async () => {
     let finishScan;
     spyOn(lumine.repositories, "setProjectRoots");
     const scan = spyOn(lumine.repositories, "scanProjectRoots").and.returnValue(
@@ -306,15 +306,15 @@ describe("git-center", () => {
     const repositoryListView = mainModule.getRepositoryListView();
     await repositoryListView.toggle();
     const listView = repositoryListView.selectListView;
-    const rescanItem = listView.props.items.find((item) => item.rescan);
+    const updateItem = listView.props.items.find((item) => item.update);
     Object.defineProperty(listView.refs.items, "scrollTop", {
       configurable: true,
       value: 41,
       writable: true,
     });
 
-    expect(rescanItem.repoName).toBe("Rescan repositories");
-    listView.props.didConfirmSelection(rescanItem);
+    expect(updateItem.repoName).toBe("Update repositories");
+    listView.props.didConfirmSelection(updateItem);
     expect(scan).toHaveBeenCalled();
     expect(listView.isVisible()).toBe(true);
     await listView.update({});
