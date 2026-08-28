@@ -10,7 +10,7 @@
   },
 
   // The two other ways to open the selected worktree. Locking, moving and
-  // removing it stay on the item-actions list (F12), which labels them: they
+  // removing it stay on the item-actions list, which labels them: they
   // are rare, one is destructive, and every free `alt-<letter>` here would be
   // some other package's reveal key taken for as long as this list has focus.
   ".git-center-worktree-list": {
