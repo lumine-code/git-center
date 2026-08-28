@@ -730,6 +730,69 @@ describe("git-center", () => {
       expect(chipTexts(rows[3].querySelector(".trailing-block"))).toContain("feature");
     });
 
+    it("offers only the actions that apply to each worktree-picker row", async () => {
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      const listView = worktreeListView.selectListView;
+      const actionsFor = async (item) => {
+        await listView.selectItem(item);
+        return listView.itemActions();
+      };
+
+      let actions = await actionsFor(listView.items.find((item) => item.action === "create"));
+      expect(actions.map((action) => action.command)).toEqual(["git-center:create-worktree"]);
+      expect(actions[0].keystrokes).toEqual(["enter"]);
+
+      actions = await actionsFor(listView.items.find((item) => item.action === "prune"));
+      expect(actions.map((action) => action.command)).toEqual(["git-center:prune-worktrees"]);
+      expect(actions[0].keystrokes).toEqual(["enter"]);
+
+      const worktree = listView.items.find((item) => item.path === worktreePath);
+      actions = await actionsFor(worktree);
+      expect(actions.map((action) => action.command)).toEqual([
+        "git-center:open-worktree-in-this-window",
+        "git-center:open-worktree-in-new-window",
+        "git-center:add-worktree-to-window",
+        "git-center:lock-worktree",
+        "git-center:move-worktree",
+        "git-center:remove-worktree",
+      ]);
+      expect(actions[0].keystrokes).toEqual(["enter"]);
+      expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(false);
+
+      worktree.locked = true;
+      actions = listView.itemActions();
+      expect(actions.some((action) => action.command === "git-center:lock-worktree")).toBe(false);
+      expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(true);
+
+      listView.selectNone();
+      expect(listView.itemActions()).toEqual([]);
+    });
+
+    it("dispatches each semantic worktree primary action once", async () => {
+      const worktreeListView = mainModule.getWorktreeListView();
+      await worktreeListView.toggle();
+      const listView = worktreeListView.selectListView;
+      const confirm = spyOn(worktreeListView, "confirmWorktree");
+      const perform = spyOn(worktreeListView, "performAction");
+
+      const worktree = listView.items.find((item) => item.path === worktreePath);
+      await listView.selectItem(worktree);
+      lumine.commands.dispatch(listView.element, "git-center:open-worktree-in-this-window");
+      expect(confirm).toHaveBeenCalledOnceWith(worktree);
+
+      const create = listView.items.find((item) => item.action === "create");
+      await listView.selectItem(create);
+      lumine.commands.dispatch(listView.element, "git-center:create-worktree");
+      expect(perform).toHaveBeenCalledOnceWith("create");
+
+      const prune = listView.items.find((item) => item.action === "prune");
+      await listView.selectItem(prune);
+      lumine.commands.dispatch(listView.element, "git-center:prune-worktrees");
+      expect(perform).toHaveBeenCalledWith("prune");
+      expect(perform.calls.count()).toBe(2);
+    });
+
     // Every `update({items})` re-filters, and re-filtering selects the first
     // row. A status snapshot arriving while the list is open is ambient, not
     // user navigation, so it must leave the highlight where the user put it —

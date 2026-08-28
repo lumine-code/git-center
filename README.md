@@ -28,6 +28,9 @@ Commands available in `lumine-workspace`:
 
 Commands available in the worktree picker:
 
+- `git-center:open-worktree-in-this-window`: replace this window's project with the selected worktree,
+- `git-center:create-worktree`: open a path prompt for a new worktree in the active repository,
+- `git-center:prune-worktrees`: remove stale worktree records whose directories no longer exist,
 - `git-center:open-worktree-in-new-window`: open the selected worktree in a new window,
 - `git-center:add-worktree-to-window`: add the selected worktree to this window's project,
 - `git-center:lock-worktree`: lock the selected worktree so it is never pruned,
