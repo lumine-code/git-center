@@ -679,8 +679,8 @@ describe("git-center", () => {
     branchListView.performAction("create");
     const nameInputDialogView = branchListView.branchNameDialog.inputDialogView;
     expect(nameInputDialogView.props.infoMessage).toBe("Please provide a new branch name");
-    expect(nameInputDialogView.refs.queryEditor.getPlaceholderText()).toBe("Branch name");
-    nameInputDialogView.refs.queryEditor.setText("new-branch");
+    expect(nameInputDialogView.getQueryEditor().getPlaceholderText()).toBe("Branch name");
+    nameInputDialogView.getQueryEditor().setText("new-branch");
     await nameInputDialogView.props.didConfirm();
     expect(operations.checkout).toHaveBeenCalledWith("new-branch", { createNew: true });
 
@@ -689,7 +689,7 @@ describe("git-center", () => {
       (item) => item.reference === "main",
     );
     branchListView.confirmReference(main);
-    nameInputDialogView.refs.queryEditor.setText("from-main");
+    nameInputDialogView.getQueryEditor().setText("from-main");
     await nameInputDialogView.props.didConfirm();
     expect(operations.checkout).toHaveBeenCalledWith("from-main", {
       createNew: true,
@@ -845,7 +845,7 @@ describe("git-center", () => {
 
       lumine.commands.dispatch(listView.element, "git-center:lock-worktree");
       const dialog = worktreeListView.textDialog.inputDialogView;
-      dialog.refs.queryEditor.setText("held for the spec");
+      dialog.getQueryEditor().setText("held for the spec");
       await dialog.props.didConfirm();
       await repoA.repository.refreshRefsSnapshot();
       const locked = repoA.repository
@@ -935,7 +935,7 @@ describe("git-center", () => {
       );
 
       const created = path.join(makeWorkdir("git-center-created-"), "topic");
-      dialog.refs.queryEditor.setText(created);
+      dialog.getQueryEditor().setText(created);
       await dialog.props.didConfirm();
       await repoA.repository.refreshRefsSnapshot();
 
