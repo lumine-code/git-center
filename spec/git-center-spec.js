@@ -678,10 +678,10 @@ describe("git-center", () => {
 
     branchListView.performAction("create");
     const nameInputDialogView = branchListView.branchNameDialog.inputDialogView;
-    expect(nameInputDialogView.props.infoMessage).toBe("Please provide a new branch name");
+    expect(nameInputDialogView.getInfoMessage()).toBe("Please provide a new branch name");
     expect(nameInputDialogView.getQueryEditor().getPlaceholderText()).toBe("Branch name");
     nameInputDialogView.getQueryEditor().setText("new-branch");
-    await nameInputDialogView.props.didConfirm();
+    await lumine.commands.dispatch(nameInputDialogView.getElement(), "core:confirm");
     expect(operations.checkout).toHaveBeenCalledWith("new-branch", { createNew: true });
 
     await branchListView.showReferenceList("create-from", repoA.repository);
@@ -690,7 +690,7 @@ describe("git-center", () => {
     );
     branchListView.confirmReference(main);
     nameInputDialogView.getQueryEditor().setText("from-main");
-    await nameInputDialogView.props.didConfirm();
+    await lumine.commands.dispatch(nameInputDialogView.getElement(), "core:confirm");
     expect(operations.checkout).toHaveBeenCalledWith("from-main", {
       createNew: true,
       startPoint: "main",
@@ -846,7 +846,7 @@ describe("git-center", () => {
       lumine.commands.dispatch(listView.element, "git-center:lock-worktree");
       const dialog = worktreeListView.textDialog.inputDialogView;
       dialog.getQueryEditor().setText("held for the spec");
-      await dialog.props.didConfirm();
+      await lumine.commands.dispatch(dialog.getElement(), "core:confirm");
       await repoA.repository.refreshRefsSnapshot();
       const locked = repoA.repository
         .getRefsSnapshot()
@@ -936,7 +936,7 @@ describe("git-center", () => {
 
       const created = path.join(makeWorkdir("git-center-created-"), "topic");
       dialog.getQueryEditor().setText(created);
-      await dialog.props.didConfirm();
+      await lumine.commands.dispatch(dialog.getElement(), "core:confirm");
       await repoA.repository.refreshRefsSnapshot();
 
       expect(fs.existsSync(path.join(created, "file.txt"))).toBe(true);
