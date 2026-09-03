@@ -256,12 +256,12 @@ describe("git-center", () => {
     const listView = mainModule.repositoryListView.selectListView;
     expect(listView.isVisible()).toBe(true);
 
-    const items = listView.props.items;
+    const items = listView.getItems();
     expect(items[0].auto).toBe(true);
     expect(items[0].repoName).toBe("Auto");
     expect(items[1].update).toBe(true);
     expect(items[2].repository).toBe(repoA.repository);
-    const autoElement = Array.from(listView.element.querySelectorAll(".list-group li")).find(
+    const autoElement = Array.from(listView.getElement().querySelectorAll(".list-group li")).find(
       (element) => element.textContent.includes("Auto"),
     );
     expect(autoElement.querySelector(".secondary-line").textContent).toBe(
@@ -270,7 +270,7 @@ describe("git-center", () => {
     expect(items.slice(2).every((item) => item.current)).toBe(true);
 
     const separators = Array.from(
-      listView.element.querySelectorAll(".list-group > .select-list-separator"),
+      listView.getElement().querySelectorAll(".list-group > .select-list-separator"),
     );
     expect(separators.length).toBe(1);
     expect(separators[0].nextElementSibling.querySelector(".primary-text").textContent).toBe(
@@ -279,15 +279,16 @@ describe("git-center", () => {
 
     const target = items.find((item) => item.repository === repoB.repository);
     expect(target).toBeTruthy();
-    listView.props.didConfirmSelection(target);
+    await listView.selectItemById(target.id);
+    await listView.confirmSelection();
 
     expect(lumine.repositories.getActiveRepository()).toBe(repoB.repository);
     expect(lumine.repositories.isActiveRepositoryPinned()).toBe(true);
     expect(listView.isVisible()).toBe(false);
 
     await mainModule.getRepositoryListView().toggle();
-    const auto = listView.props.items.find((item) => item.auto);
-    listView.props.didConfirmSelection(auto);
+    await listView.selectItemById("action:auto");
+    await listView.confirmSelection();
     expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
   });
 
@@ -306,29 +307,28 @@ describe("git-center", () => {
     const repositoryListView = mainModule.getRepositoryListView();
     await repositoryListView.toggle();
     const listView = repositoryListView.selectListView;
-    const updateItem = listView.props.items.find((item) => item.update);
-    Object.defineProperty(listView.refs.items, "scrollTop", {
-      configurable: true,
-      value: 41,
-      writable: true,
-    });
+    const updateItem = listView.getItems().find((item) => item.update);
+    spyOn(listView, "getScrollTop").and.returnValue(41);
 
     expect(updateItem.repoName).toBe("Update repositories");
-    listView.props.didConfirmSelection(updateItem);
+    await listView.selectItemById(updateItem.id);
+    const updateAction = listView.confirmSelection();
+    await conditionPromise(() => scan.calls.any());
     expect(scan).toHaveBeenCalled();
     expect(listView.isVisible()).toBe(true);
     await listView.update({});
-    expect(listView.refs.loadingMessage.textContent).toBe("Loading repositories…");
-    expect(listView.props.items).toEqual([]);
-    expect(listView.element.querySelectorAll(".list-group li").length).toBe(0);
+    expect(listView.getLoadingState().message).toBe("Loading repositories…");
+    expect(listView.getItems()).toEqual([]);
+    expect(listView.getElement().querySelectorAll(".list-group li").length).toBe(0);
     expect(repositoryListView.rescanScrollTop).toBe(41);
 
     finishScan([]);
     await rescanFinished;
+    await updateAction;
     await repositoryListView.requestRefresh();
     await Promise.resolve();
-    expect(listView.props.loadingMessage).toBeNull();
-    expect(listView.props.items.length).toBeGreaterThan(0);
+    expect(listView.getLoadingState()).toBeNull();
+    expect(listView.getItems().length).toBeGreaterThan(0);
     expect(repositoryListView.rescanScrollTop).toBeNull();
   });
 
@@ -336,11 +336,8 @@ describe("git-center", () => {
     const repositoryListView = mainModule.getRepositoryListView();
     await repositoryListView.toggle();
     const listView = repositoryListView.selectListView;
-    Object.defineProperty(listView.refs.items, "scrollTop", {
-      configurable: true,
-      value: 37,
-      writable: true,
-    });
+    spyOn(listView, "getScrollTop").and.returnValue(37);
+    const setScrollTop = spyOn(listView, "setScrollTop");
     spyOn(repositoryListView, "requestRefresh").and.callThrough();
 
     fs.writeFileSync(path.join(repoA.workingDirectory, "new.txt"), "new\n");
@@ -348,9 +345,9 @@ describe("git-center", () => {
     expect(repositoryListView.requestRefresh).toHaveBeenCalled();
     await repositoryListView.requestRefresh.calls.mostRecent().returnValue;
 
-    const item = listView.props.items.find((entry) => entry.repository === repoA.repository);
+    const item = listView.getItems().find((entry) => entry.repository === repoA.repository);
     expect(item.status.added).toBe(1);
-    expect(listView.refs.items.scrollTop).toBe(37);
+    expect(setScrollTop).toHaveBeenCalledWith(37);
 
     repositoryListView.hide();
     repositoryListView.requestRefresh.calls.reset();
@@ -368,7 +365,7 @@ describe("git-center", () => {
     const listView = mainModule.branchListView.selectListView;
     expect(listView.isVisible()).toBe(true);
 
-    const items = listView.props.items;
+    const items = listView.getItems();
     expect(items.slice(0, 3).map((item) => item.branch)).toEqual([
       "Create new branch...",
       "Create new branch from...",
@@ -385,7 +382,8 @@ describe("git-center", () => {
         resolve();
       });
     });
-    listView.props.didConfirmSelection(target);
+    await listView.selectItemById(target.id);
+    await listView.confirmSelection();
     await didChangeRefs;
     expect(repoA.repository.getRefsSnapshot().head.name).toBe("feature");
   });
@@ -413,7 +411,7 @@ describe("git-center", () => {
     const branchListView = mainModule.getBranchListView();
     await branchListView.toggle();
     const listView = branchListView.selectListView;
-    const refs = listView.props.items.filter((item) => !item.action);
+    const refs = listView.getItems().filter((item) => !item.action);
 
     expect(refs.map((item) => item.kind)).toEqual(["local", "remote", "remote", "tag"]);
     expect(refs.map((item) => item.branch)).toEqual([
@@ -425,7 +423,7 @@ describe("git-center", () => {
     expect(refs.every((item) => item.lastCommit?.subject === "Initial commit")).toBe(true);
 
     const separators = Array.from(
-      listView.element.querySelectorAll(".list-group > .select-list-separator"),
+      listView.getElement().querySelectorAll(".list-group > .select-list-separator"),
     );
     expect(separators.length).toBe(3);
     const firstRowsAfterSeparators = separators.map((separator) =>
@@ -435,9 +433,9 @@ describe("git-center", () => {
     expect(firstRowsAfterSeparators[1]).toMatch(/^origin\/main /);
     expect(firstRowsAfterSeparators[2]).toMatch(/^v1\.0\.0 /);
     // The rules are the whole of the grouping: no kind carries a label.
-    expect(listView.element.querySelector(".git-center-ref-group")).toBeNull();
+    expect(listView.getElement().querySelector(".git-center-ref-group")).toBeNull();
 
-    const mainRow = Array.from(listView.element.querySelectorAll(".list-group li")).find(
+    const mainRow = Array.from(listView.getElement().querySelectorAll(".list-group li")).find(
       (element) =>
         element
           .querySelector(".primary-line.icon-git-branch .primary-text")
@@ -455,7 +453,8 @@ describe("git-center", () => {
     branchListView.confirmCheckoutItem(refs.find((item) => item.branch === "origin/main"));
     expect(operations.checkout).not.toHaveBeenCalled();
 
-    listView.props.didConfirmSelection(refs.find((item) => item.branch === "origin/remote-only"));
+    await listView.selectItemById("remote:origin/remote-only");
+    await listView.confirmSelection();
     expect(operations.checkout).toHaveBeenCalledWith("remote-only", {
       createNew: true,
       track: true,
@@ -470,11 +469,8 @@ describe("git-center", () => {
     const branchListView = mainModule.getBranchListView();
     await branchListView.toggle();
     const listView = branchListView.selectListView;
-    Object.defineProperty(listView.refs.items, "scrollTop", {
-      configurable: true,
-      value: 53,
-      writable: true,
-    });
+    spyOn(listView, "getScrollTop").and.returnValue(53);
+    const setScrollTop = spyOn(listView, "setScrollTop");
     spyOn(branchListView, "requestBranchRefresh").and.callThrough();
 
     await lumine.repositories.executeGit(["branch", "feature"], repoA.workingDirectory);
@@ -482,8 +478,8 @@ describe("git-center", () => {
     expect(branchListView.requestBranchRefresh).toHaveBeenCalled();
     await branchListView.requestBranchRefresh.calls.mostRecent().returnValue;
 
-    expect(listView.props.items.some((item) => item.branch === "feature")).toBe(true);
-    expect(listView.refs.items.scrollTop).toBe(53);
+    expect(listView.getItems().some((item) => item.branch === "feature")).toBe(true);
+    expect(setScrollTop).toHaveBeenCalledWith(53);
   });
 
   it("shows working-tree counts on the repository tile and in the picker", async () => {
@@ -507,8 +503,8 @@ describe("git-center", () => {
 
     await mainModule.getRepositoryListView().toggle();
     const listView = mainModule.repositoryListView.selectListView;
-    const row = Array.from(listView.element.querySelectorAll(".list-group li")).find((element) =>
-      element.textContent.includes(path.basename(repoA.workingDirectory)),
+    const row = Array.from(listView.getElement().querySelectorAll(".list-group li")).find(
+      (element) => element.textContent.includes(path.basename(repoA.workingDirectory)),
     );
     const trailing = row.querySelector(".trailing-block");
     expect(chipTexts(trailing)).toEqual(["+1", "~1", "-1", "main"]);
@@ -526,10 +522,10 @@ describe("git-center", () => {
     jasmine.attachToDOM(lumine.workspace.getElement());
     await mainModule.getRepositoryListView().toggle();
     const listView = mainModule.repositoryListView.selectListView;
-    jasmine.attachToDOM(listView.element);
+    jasmine.attachToDOM(listView.getElement());
 
-    const row = Array.from(listView.element.querySelectorAll(".list-group li")).find((element) =>
-      element.textContent.includes(path.basename(repoA.workingDirectory)),
+    const row = Array.from(listView.getElement().querySelectorAll(".list-group li")).find(
+      (element) => element.textContent.includes(path.basename(repoA.workingDirectory)),
     );
 
     // Floating the block blockifies its display, which is why the rule says flex.
@@ -581,14 +577,15 @@ describe("git-center", () => {
     // The branch picker reads its counts per branch, from the refs snapshot.
     await mainModule.getBranchListView().toggle();
     const listView = mainModule.branchListView.selectListView;
-    const item = listView.props.items.find((entry) => entry.branch === "main");
+    const item = listView.getItems().find((entry) => entry.branch === "main");
     expect(item.upstream.name).toBe("origin/main");
     expect(item.upstream.ahead).toBe(1);
 
-    const row = Array.from(listView.element.querySelectorAll(".list-group li")).find((element) =>
-      element
-        .querySelector(".primary-line.icon-git-branch .primary-text")
-        ?.textContent.startsWith("main "),
+    const row = Array.from(listView.getElement().querySelectorAll(".list-group li")).find(
+      (element) =>
+        element
+          .querySelector(".primary-line.icon-git-branch .primary-text")
+          ?.textContent.startsWith("main "),
     );
     expect(row.querySelector(".secondary-line").textContent).toContain("Commit that the remote");
     expect(chipTexts(row.querySelector(".trailing-block"))).toEqual(["↑1", "current"]);
@@ -655,7 +652,7 @@ describe("git-center", () => {
     await mainModule.getBranchListView().toggle();
     const listView = mainModule.branchListView.selectListView;
     const rows = Array.from(
-      listView.element.querySelectorAll(".list-group > li:not(.select-list-separator)"),
+      listView.getElement().querySelectorAll(".list-group > li:not(.select-list-separator)"),
     );
 
     // The three action rows carry no secondary line, so they stay compact.
@@ -685,10 +682,11 @@ describe("git-center", () => {
     expect(operations.checkout).toHaveBeenCalledWith("new-branch", { createNew: true });
 
     await branchListView.showReferenceList("create-from", repoA.repository);
-    const main = branchListView.referenceListView.props.items.find(
-      (item) => item.reference === "main",
-    );
-    branchListView.confirmReference(main);
+    const main = branchListView.referenceListView
+      .getItems()
+      .find((item) => item.reference === "main");
+    await branchListView.referenceListView.selectItemById(main.id);
+    await branchListView.referenceListView.confirmSelection();
     nameInputDialogView.getQueryEditor().setText("from-main");
     await lumine.commands.dispatch(nameInputDialogView.getElement(), "core:confirm");
     expect(operations.checkout).toHaveBeenCalledWith("from-main", {
@@ -697,9 +695,11 @@ describe("git-center", () => {
     });
 
     await branchListView.showReferenceList("detach", repoA.repository);
-    branchListView.confirmReference(
-      branchListView.referenceListView.props.items.find((item) => item.reference === "main"),
-    );
+    const detachedMain = branchListView.referenceListView
+      .getItems()
+      .find((item) => item.reference === "main");
+    await branchListView.referenceListView.selectItemById(detachedMain.id);
+    await branchListView.referenceListView.confirmSelection();
     expect(operations.checkout).toHaveBeenCalledWith("main", { detach: true });
   });
 
@@ -714,13 +714,13 @@ describe("git-center", () => {
       await mainModule.getWorktreeListView().toggle();
       const listView = mainModule.worktreeListView.selectListView;
 
-      const worktrees = listView.props.items.filter((item) => !item.action);
+      const worktrees = listView.getItems().filter((item) => !item.action);
       expect(worktrees.map((item) => item.branch)).toEqual(["main", "feature"]);
       expect(worktrees.map((item) => item.current)).toEqual([true, false]);
       expect(worktrees[1].path).toBe(worktreePath);
 
       const rows = Array.from(
-        listView.element.querySelectorAll(".list-group > li:not(.select-list-separator)"),
+        listView.getElement().querySelectorAll(".list-group > li:not(.select-list-separator)"),
       );
       // The two action rows stay compact; a worktree carries its path below.
       expect(rows[0].classList.contains("two-lines")).toBe(false);
@@ -736,18 +736,18 @@ describe("git-center", () => {
       const listView = worktreeListView.selectListView;
       const actionsFor = async (item) => {
         await listView.selectItem(item);
-        return listView.itemActions();
+        return listView.getAvailableActions();
       };
 
-      let actions = await actionsFor(listView.items.find((item) => item.action === "create"));
+      let actions = await actionsFor(listView.getItems().find((item) => item.action === "create"));
       expect(actions.map((action) => action.command)).toEqual(["git-center:create-worktree"]);
-      expect(actions[0].keystrokes).toEqual(["enter"]);
+      expect(actions[0].primary).toBe(true);
 
-      actions = await actionsFor(listView.items.find((item) => item.action === "prune"));
+      actions = await actionsFor(listView.getItems().find((item) => item.action === "prune"));
       expect(actions.map((action) => action.command)).toEqual(["git-center:prune-worktrees"]);
-      expect(actions[0].keystrokes).toEqual(["enter"]);
+      expect(actions[0].primary).toBe(true);
 
-      const worktree = listView.items.find((item) => item.path === worktreePath);
+      const worktree = listView.getItems().find((item) => item.path === worktreePath);
       actions = await actionsFor(worktree);
       expect(actions.map((action) => action.command)).toEqual([
         "git-center:open-worktree-in-this-window",
@@ -757,16 +757,16 @@ describe("git-center", () => {
         "git-center:move-worktree",
         "git-center:remove-worktree",
       ]);
-      expect(actions[0].keystrokes).toEqual(["enter"]);
+      expect(actions[0].primary).toBe(true);
       expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(false);
 
       worktree.locked = true;
-      actions = listView.itemActions();
+      actions = listView.getAvailableActions();
       expect(actions.some((action) => action.command === "git-center:lock-worktree")).toBe(false);
       expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(true);
 
-      listView.selectNone();
-      expect(listView.itemActions()).toEqual([]);
+      await listView.selectNone();
+      expect(listView.getAvailableActions()).toEqual([]);
     });
 
     it("dispatches each semantic worktree primary action once", async () => {
@@ -776,19 +776,19 @@ describe("git-center", () => {
       const confirm = spyOn(worktreeListView, "confirmWorktree");
       const perform = spyOn(worktreeListView, "performAction");
 
-      const worktree = listView.items.find((item) => item.path === worktreePath);
+      const worktree = listView.getItems().find((item) => item.path === worktreePath);
       await listView.selectItem(worktree);
-      lumine.commands.dispatch(listView.element, "git-center:open-worktree-in-this-window");
+      await listView.runAction("git-center:open-worktree-in-this-window", { source: "spec" });
       expect(confirm).toHaveBeenCalledOnceWith(worktree);
 
-      const create = listView.items.find((item) => item.action === "create");
+      const create = listView.getItems().find((item) => item.action === "create");
       await listView.selectItem(create);
-      lumine.commands.dispatch(listView.element, "git-center:create-worktree");
+      await listView.runAction("git-center:create-worktree", { source: "spec" });
       expect(perform).toHaveBeenCalledOnceWith("create");
 
-      const prune = listView.items.find((item) => item.action === "prune");
+      const prune = listView.getItems().find((item) => item.action === "prune");
       await listView.selectItem(prune);
-      lumine.commands.dispatch(listView.element, "git-center:prune-worktrees");
+      await listView.runAction("git-center:prune-worktrees", { source: "spec" });
       expect(perform).toHaveBeenCalledWith("prune");
       expect(perform.calls.count()).toBe(2);
     });
@@ -801,7 +801,7 @@ describe("git-center", () => {
       const worktreeListView = mainModule.getWorktreeListView();
       await worktreeListView.toggle();
       const listView = worktreeListView.selectListView;
-      listView.selectItem(listView.items.find((entry) => entry.path === worktreePath));
+      await listView.selectItem(listView.getItems().find((entry) => entry.path === worktreePath));
       expect(listView.getSelectedItem().path).toBe(worktreePath);
 
       await repoA.repository.refreshStatusSnapshot();
@@ -817,11 +817,12 @@ describe("git-center", () => {
 
       const worktreeListView = mainModule.getWorktreeListView();
       await worktreeListView.toggle();
-      const item = worktreeListView.selectListView.props.items.find(
-        (entry) => entry.path === worktreePath,
-      );
+      const item = worktreeListView.selectListView
+        .getItems()
+        .find((entry) => entry.path === worktreePath);
 
-      worktreeListView.selectListView.props.didConfirmSelection(item);
+      await worktreeListView.selectListView.selectItemById(item.id);
+      await worktreeListView.selectListView.confirmSelection();
       expect(lumine.project.setState).toHaveBeenCalledWith([worktreePath]);
 
       worktreeListView.openSelected(item, "add");
@@ -839,11 +840,11 @@ describe("git-center", () => {
       await worktreeListView.toggle();
       const listView = worktreeListView.selectListView;
       const selectWorktree = () =>
-        listView.selectItem(listView.items.find((entry) => entry.path === worktreePath));
-      selectWorktree();
+        listView.selectItem(listView.getItems().find((entry) => entry.path === worktreePath));
+      await selectWorktree();
       const item = listView.getSelectedItem();
 
-      lumine.commands.dispatch(listView.element, "git-center:lock-worktree");
+      await listView.runAction("git-center:lock-worktree", { source: "spec" });
       const dialog = worktreeListView.textDialog.inputDialogView;
       dialog.getQueryEditor().setText("held for the spec");
       await lumine.commands.dispatch(dialog.getElement(), "core:confirm");
@@ -878,16 +879,16 @@ describe("git-center", () => {
 
       const branchListView = mainModule.getBranchListView();
       await branchListView.toggle();
-      const feature = branchListView.selectListView.props.items.find(
-        (item) => item.branch === "feature",
-      );
+      const feature = branchListView.selectListView
+        .getItems()
+        .find((item) => item.branch === "feature");
       expect(feature.worktree.path).toBe(worktreePath);
       expect(feature.current).toBe(false);
 
       const rows = Array.from(
-        branchListView.selectListView.element.querySelectorAll(
-          ".list-group > li:not(.select-list-separator)",
-        ),
+        branchListView.selectListView
+          .getElement()
+          .querySelectorAll(".list-group > li:not(.select-list-separator)"),
       );
       const featureRow = rows.find((row) =>
         row.querySelector(".primary-text").textContent.trim().startsWith("feature"),
@@ -912,7 +913,7 @@ describe("git-center", () => {
     it("does not flag the branch of the repository being viewed", async () => {
       const branchListView = mainModule.getBranchListView();
       await branchListView.toggle();
-      const main = branchListView.selectListView.props.items.find((item) => item.branch === "main");
+      const main = branchListView.selectListView.getItems().find((item) => item.branch === "main");
       expect(main.current).toBe(true);
       expect(main.worktree).toBeNull();
     });
@@ -980,20 +981,23 @@ describe("git-center", () => {
     expect(branchListView.referenceListView.isVisible()).toBe(true);
     expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
 
-    const itemsBefore = branchListView.referenceListView.props.items;
+    const itemsBefore = branchListView.referenceListView.getItems();
     const main = itemsBefore.find((item) => item.reference === "main");
-    branchListView.confirmReference(main);
+    await branchListView.referenceListView.selectItemById(main.id);
+    await branchListView.referenceListView.confirmSelection();
     expect(branchListView.branchNameDialog.inputDialogView.isVisible()).toBe(true);
     expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from", "main"]);
 
     // Going back re-shows the reference list with its items intact - no reload.
     expect(lumine.workspace.popModal()).toBe(true);
     expect(branchListView.referenceListView.isVisible()).toBe(true);
-    expect(branchListView.referenceListView.props.items).toBe(itemsBefore);
+    const itemsAfter = branchListView.referenceListView.getItems();
+    expect(itemsAfter.length).toBe(itemsBefore.length);
+    itemsAfter.forEach((item, index) => expect(item).toBe(itemsBefore[index]));
     expect(lumine.workspace.getModalTrail()).toEqual(["Branches", "Create from"]);
 
     // Escape cancels the visible step, which ends the whole trail.
-    lumine.commands.dispatch(branchListView.referenceListView.element, "core:cancel");
+    lumine.commands.dispatch(branchListView.referenceListView.getElement(), "core:cancel");
     expect(branchListView.referenceListView.isVisible()).toBe(false);
     expect(branchListView.selectListView.isVisible()).toBe(false);
     expect(lumine.workspace.getModalTrail()).toEqual([]);
