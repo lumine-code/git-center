@@ -1,11 +1,12 @@
 {
   // Part of the `alt-g` family, shared with git-panel (alt-g g), github-panel
   // (alt-g h), git-diff, git-command and open-repository. `s` for switch —
-  // Git's own verb — because `b` is open-repository's blame, and `r` its
-  // repository page. The repository picker and the lock keep to the menu and
-  // the command palette rather than take a letter that says nothing.
+  // `b` selects a branch, `c` opens the centre of the repository context, and
+  // `w` selects a worktree. The lock stays in the menu and command palette
+  // because another letter says nothing.
   "lumine-workspace": {
-    "alt-g s": "git-center:select-branch",
+    "alt-g b": "git-center:select-branch",
+    "alt-g c": "git-center:select-repository",
     "alt-g w": "git-center:select-worktree"
   },
 
