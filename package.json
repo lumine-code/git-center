@@ -8,6 +8,7 @@
     "repository",
     "checkout",
     "upstream",
+    "remote",
     "dirty",
     "indicator",
     "vcs"
@@ -30,7 +31,8 @@
   },
   "backgroundTips": [
     "You can check out another branch of the active repository with {{ 'git-center:select-branch' | keystroke }}",
-    "You can open any worktree of the active repository with {{ 'git-center:select-worktree' | keystroke }}"
+    "You can open any worktree of the active repository with {{ 'git-center:select-worktree' | keystroke }}",
+    "Right-click the branch tile to fetch, pull, push, or force-push the active branch."
   ],
   "scripts": {
     "test": "lumine --test spec",

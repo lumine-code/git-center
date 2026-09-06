@@ -12,6 +12,7 @@ Ahead and behind counts compare local refs only; nothing here fetches on your be
 - **Cross-worktree branches**: a branch already checked out in another worktree is marked as such and offers to open that worktree, since Git allows one worktree per branch and would refuse the checkout.
 - **Filterable pickers**: clicking a tile opens a list for switching repositories or checking out branches, with working-tree counts and upstream drift on the rows that have them.
 - **Quick switching**: the mouse wheel over the repository tile cycles through repositories, middle click locks or unlocks the current selection, and the repository picker's update item finds repositories again and refreshes their Git state.
+- **Remote synchronization**: the branch tile's context menu fetches, pulls, pushes, or force-pushes the active branch through the editor's repository operations.
 
 ## Installation
 
@@ -25,6 +26,10 @@ Commands available in `lumine-workspace`:
 - `git-center:select-branch`: pick a branch of the active repository to check out,
 - `git-center:select-worktree`: pick a worktree of the active repository to open,
 - `git-center:toggle-lock`: pin or unpin the active repository so it stops or resumes following the active editor.
+- `git-center:fetch`: fetch the active branch's remote,
+- `git-center:pull`: pull the active branch's upstream,
+- `git-center:push`: push the active branch,
+- `git-center:force-push`: force-push the active branch.
 
 Commands available in the worktree picker:
 

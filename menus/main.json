@@ -21,10 +21,58 @@
             {
               "label": "Toggle Lock",
               "command": "git-center:toggle-lock"
+            },
+            {
+              "type": "separator"
+            },
+            {
+              "label": "Fetch",
+              "command": "git-center:fetch"
+            },
+            {
+              "label": "Pull",
+              "command": "git-center:pull"
+            },
+            {
+              "label": "Push",
+              "command": "git-center:push"
+            },
+            {
+              "label": "Force Push",
+              "command": "git-center:force-push"
             }
           ]
         }
       ]
     }
-  ]
+  ],
+  "context-menu": {
+    ".git-center-branch.status-bar-item": [
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Fetch",
+        "command": "git-center:fetch"
+      },
+      {
+        "label": "Pull",
+        "command": "git-center:pull"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Push",
+        "command": "git-center:push"
+      },
+      {
+        "label": "Force Push",
+        "command": "git-center:force-push"
+      },
+      {
+        "type": "separator"
+      }
+    ]
+  }
 }
