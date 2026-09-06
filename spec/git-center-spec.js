@@ -9,6 +9,7 @@ const {
   statusTooltipLine,
   summarizeStatus,
 } = require("../lib/status-summary");
+const { buildRepositoryItems } = require("../lib/helpers");
 
 function makeWorkdir(prefix) {
   return fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
@@ -138,6 +139,82 @@ describe("git-center status summary", () => {
   });
 });
 
+describe("git-center repository switch items", () => {
+  function repository(name, snapshot) {
+    return {
+      ensureStatusSnapshot: jasmine
+        .createSpy(`${name}:ensureStatusSnapshot`)
+        .and.returnValue(Promise.resolve(snapshot)),
+      ensureRefsSnapshot: jasmine.createSpy(`${name}:ensureRefsSnapshot`),
+      getStatusSnapshot: () => snapshot,
+      getRefsSnapshot: jasmine.createSpy(`${name}:getRefsSnapshot`),
+      getShortHead: () => "",
+      getWorkingDirectory: () => path.join(os.tmpdir(), name),
+    };
+  }
+
+  it("loads only status and builds one row for regular, detached, and unborn heads", async () => {
+    const regular = repository("regular", statusSnapshot([]));
+    regular.getStatusSnapshot = () => ({
+      ...statusSnapshot([]),
+      head: { name: "main", oid: "1111111", detached: false, unborn: false },
+      upstream: { name: "origin/main", ahead: 2, behind: 1 },
+    });
+    regular.ensureStatusSnapshot.and.callFake(() => Promise.resolve(regular.getStatusSnapshot()));
+
+    const detached = repository("detached", {
+      ...statusSnapshot([]),
+      head: { name: null, oid: "1234567890abcdef", detached: true, unborn: false },
+      upstream: null,
+    });
+    const unborn = repository("unborn", {
+      ...statusSnapshot([]),
+      head: { name: "future", oid: null, detached: false, unborn: true },
+      upstream: null,
+    });
+    spyOn(lumine.repositories, "getActiveRepository").and.returnValue(unborn);
+
+    const items = await buildRepositoryItems([regular, detached, unborn]);
+
+    expect(items.length).toBe(3);
+    expect(items[0].repository).toBe(unborn);
+    expect(items.find((item) => item.repository === regular)).toEqual(
+      jasmine.objectContaining({
+        branch: "main",
+        current: true,
+        upstream: { name: "origin/main", ahead: 2, behind: 1 },
+      }),
+    );
+    expect(items.find((item) => item.repository === detached).branch).toBe("1234567");
+    expect(items.find((item) => item.repository === unborn).branch).toBe("future");
+    for (const itemRepository of [regular, detached, unborn]) {
+      expect(itemRepository.ensureStatusSnapshot).toHaveBeenCalledTimes(1);
+      expect(itemRepository.ensureRefsSnapshot).not.toHaveBeenCalled();
+      expect(itemRepository.getRefsSnapshot).not.toHaveBeenCalled();
+    }
+  });
+
+  it("keeps a repository reachable when its status fails to load", async () => {
+    const broken = repository("broken", { initialized: false, files: [] });
+    broken.ensureStatusSnapshot.and.returnValue(Promise.reject(new Error("status failed")));
+    spyOn(lumine.repositories, "getActiveRepository").and.returnValue(null);
+
+    const items = await buildRepositoryItems([broken]);
+
+    expect(items.length).toBe(1);
+    expect(items[0]).toEqual(
+      jasmine.objectContaining({
+        repository: broken,
+        branch: "(no branch)",
+        current: true,
+        status: null,
+        upstream: null,
+      }),
+    );
+    expect(broken.ensureRefsSnapshot).not.toHaveBeenCalled();
+  });
+});
+
 describe("git-center", () => {
   let mainModule;
   let repoA;
@@ -253,6 +330,10 @@ describe("git-center", () => {
   });
 
   it("switches the active repository through the repository picker", async () => {
+    const ensureStatusA = spyOn(repoA.repository, "ensureStatusSnapshot").and.callThrough();
+    const ensureStatusB = spyOn(repoB.repository, "ensureStatusSnapshot").and.callThrough();
+    const ensureRefsA = spyOn(repoA.repository, "ensureRefsSnapshot").and.callThrough();
+    const ensureRefsB = spyOn(repoB.repository, "ensureRefsSnapshot").and.callThrough();
     await mainModule.getRepositoryListView().toggle();
     const { selectListHost, selectList } = mainModule.repositoryListView;
     expect(selectListHost.isVisible()).toBe(true);
@@ -260,8 +341,22 @@ describe("git-center", () => {
     const items = selectList.getItems();
     expect(items[0].auto).toBe(true);
     expect(items[0].repoName).toBe("Auto");
-    expect(items[1].update).toBe(true);
-    expect(items[2].repository).toBe(repoA.repository);
+    expect(items[1].repository).toBe(repoA.repository);
+    expect(items.some((item) => item.update)).toBe(false);
+    const updateRepositories = selectList
+      .getAvailableActions()
+      .find((action) => action.command === "git-center:refresh-repositories");
+    expect(updateRepositories).toEqual(
+      jasmine.objectContaining({
+        name: "Update Repositories",
+        context: "dialog",
+        group: "List",
+      }),
+    );
+    expect(ensureStatusA).toHaveBeenCalledTimes(1);
+    expect(ensureStatusB).toHaveBeenCalledTimes(1);
+    expect(ensureRefsA).not.toHaveBeenCalled();
+    expect(ensureRefsB).not.toHaveBeenCalled();
     const autoElement = Array.from(selectList.getElement().querySelectorAll(".list-group li")).find(
       (element) => element.textContent.includes("Auto"),
     );
@@ -275,7 +370,7 @@ describe("git-center", () => {
     );
     expect(separators.length).toBe(1);
     expect(separators[0].nextElementSibling.querySelector(".primary-text").textContent).toBe(
-      items[2].repoName,
+      path.basename(repoB.workingDirectory),
     );
 
     const target = items.find((item) => item.repository === repoB.repository);
@@ -322,12 +417,10 @@ describe("git-center", () => {
     const repositoryListView = mainModule.getRepositoryListView();
     await repositoryListView.toggle();
     const selectList = repositoryListView.selectList;
-    const updateItem = selectList.getItems().find((item) => item.update);
     spyOn(selectList, "getScrollTop").and.returnValue(41);
 
-    expect(updateItem.repoName).toBe("Update repositories");
-    await selectList.selectItemById(updateItem.id);
-    const updateAction = selectList.confirmSelection();
+    expect(selectList.getItems().some((item) => item.update)).toBe(false);
+    const updateAction = selectList.runAction("git-center:refresh-repositories");
     await conditionPromise(() => scan.calls.any());
     expect(scan).toHaveBeenCalled();
     expect(repositoryListView.selectListHost.isVisible()).toBe(true);
@@ -371,6 +464,81 @@ describe("git-center", () => {
     expect(repositoryListView.requestRefresh).not.toHaveBeenCalled();
   });
 
+  it("coalesces a burst of repository-list refresh requests", async () => {
+    const repositoryListView = mainModule.getRepositoryListView();
+    await repositoryListView.toggle();
+    spyOn(repositoryListView, "requestRefresh").and.callThrough();
+
+    repositoryListView.scheduleRefresh();
+    repositoryListView.scheduleRefresh();
+    repositoryListView.scheduleRefresh();
+    await conditionPromise(() => repositoryListView.requestRefresh.calls.any());
+    await repositoryListView.requestRefresh.calls.mostRecent().returnValue;
+
+    expect(repositoryListView.requestRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("finishes a cold status load after the repository picker closes", async () => {
+    const initial = { initialized: false, files: [] };
+    const loaded = {
+      ...statusSnapshot([]),
+      head: { name: "main", oid: "1111111", detached: false, unborn: false },
+      upstream: null,
+    };
+    let current = initial;
+    let resolveColdLoad;
+    let coldLoads = 0;
+    const statusListeners = new Set();
+    const fakeRepository = {
+      getWorkingDirectory: () => path.join(os.tmpdir(), "cold-repository"),
+      getStatusSnapshot: () => current,
+      getRefsSnapshot: jasmine.createSpy("getRefsSnapshot"),
+      getShortHead: () => (current.initialized ? current.head.name : ""),
+      ensureStatusSnapshot: jasmine.createSpy("ensureStatusSnapshot").and.callFake(() => {
+        if (current.initialized) return Promise.resolve(current);
+        coldLoads++;
+        return new Promise((resolve) => {
+          resolveColdLoad = () => {
+            current = loaded;
+            for (const listener of statusListeners) listener(current);
+            resolve(current);
+          };
+        });
+      }),
+      ensureRefsSnapshot: jasmine.createSpy("ensureRefsSnapshot"),
+      onDidChangeStatusSnapshot(callback) {
+        statusListeners.add(callback);
+        return { dispose: () => statusListeners.delete(callback) };
+      },
+      onDidChangeRefsSnapshot() {
+        return { dispose() {} };
+      },
+    };
+    spyOn(lumine.repositories, "getRepositories").and.returnValue([fakeRepository]);
+
+    const repositoryListView = mainModule.getRepositoryListView();
+    const opening = repositoryListView.toggle();
+    await conditionPromise(() => typeof resolveColdLoad === "function");
+    expect(repositoryListView.selectListHost.isVisible()).toBe(true);
+
+    repositoryListView.hide();
+    resolveColdLoad();
+    await opening;
+
+    expect(repositoryListView.selectListHost.isVisible()).toBe(false);
+    expect(current).toBe(loaded);
+    expect(coldLoads).toBe(1);
+    expect(fakeRepository.ensureRefsSnapshot).not.toHaveBeenCalled();
+    expect(fakeRepository.getRefsSnapshot).not.toHaveBeenCalled();
+
+    await repositoryListView.toggle();
+    const item = repositoryListView.selectList
+      .getItems()
+      .find((entry) => entry.repository === fakeRepository);
+    expect(item.branch).toBe("main");
+    expect(coldLoads).toBe(1);
+  });
+
   it("checks out a branch through the branch picker", async () => {
     await repoA.repository.getOperations().checkout("feature", { createNew: true });
     await repoA.repository.getOperations().checkout("main");
@@ -401,6 +569,16 @@ describe("git-center", () => {
     await selectList.confirmSelection();
     await didChangeRefs;
     expect(repoA.repository.getRefsSnapshot().head.name).toBe("feature");
+  });
+
+  it("loads refs only for the active repository in the branch picker", async () => {
+    const ensureRefsA = spyOn(repoA.repository, "ensureRefsSnapshot").and.callThrough();
+    const ensureRefsB = spyOn(repoB.repository, "ensureRefsSnapshot").and.callThrough();
+
+    await mainModule.getBranchListView().toggle();
+
+    expect(ensureRefsA).toHaveBeenCalled();
+    expect(ensureRefsB).not.toHaveBeenCalled();
   });
 
   it("lists local branches, remote branches, and tags with last-commit details", async () => {
