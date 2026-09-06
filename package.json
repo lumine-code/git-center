@@ -47,6 +47,14 @@
       }
     }
   },
+  "configSchema": {
+    "autoLockRepository": {
+      "title": "Auto Lock Repository",
+      "description": "Lock a repository after selecting it from the repository picker.",
+      "type": "boolean",
+      "default": false
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.9.1",

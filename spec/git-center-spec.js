@@ -155,6 +155,7 @@ describe("git-center", () => {
   });
 
   afterEach(async () => {
+    lumine.config.unset("git-center.autoLockRepository");
     lumine.repositories.setActiveRepository(null);
     lumine.repositories.forget(repoA.repository);
     lumine.repositories.forget(repoB.repository);
@@ -283,13 +284,27 @@ describe("git-center", () => {
     await selectList.confirmSelection();
 
     expect(lumine.repositories.getActiveRepository()).toBe(repoB.repository);
-    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(true);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
     expect(selectListHost.isVisible()).toBe(false);
 
     await mainModule.getRepositoryListView().toggle();
     await selectList.selectItemById("action:auto");
     await selectList.confirmSelection();
     expect(lumine.repositories.isActiveRepositoryPinned()).toBe(false);
+  });
+
+  it("optionally locks a repository selected through the picker", async () => {
+    lumine.config.set("git-center.autoLockRepository", true);
+    await mainModule.getRepositoryListView().toggle();
+    const { selectListHost, selectList } = mainModule.repositoryListView;
+    const target = selectList.getItems().find((item) => item.repository === repoB.repository);
+
+    await selectList.selectItemById(target.id);
+    await selectList.confirmSelection();
+
+    expect(lumine.repositories.getActiveRepository()).toBe(repoB.repository);
+    expect(lumine.repositories.isActiveRepositoryPinned()).toBe(true);
+    expect(selectListHost.isVisible()).toBe(false);
   });
 
   it("shows a loading status while the update item scans repositories", async () => {

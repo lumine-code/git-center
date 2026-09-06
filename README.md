@@ -6,7 +6,7 @@ Ahead and behind counts compare local refs only; nothing here fetches on your be
 
 ## Features
 
-- **Repository tile**: shows the window's active repository and how many files are added, modified, deleted, or conflicted, or the focused folder dimmed when it is not part of a repository; choosing a repository locks it, while `Auto` follows the active workspace item.
+- **Repository tile**: shows the window's active repository and how many files are added, modified, deleted, or conflicted, or the focused folder dimmed when it is not part of a repository; `Auto` follows the active workspace item, while the optional Auto Lock Repository setting pins repositories chosen from the picker.
 - **Branch tile**: shows the active repository's branch and how far it has drifted from its upstream, and offers branch creation, start-point selection, and detached checkout; its picker groups local branches, remote branches, and tags with each ref's latest commit author, age, short hash, and subject.
 - **Worktree picker**: lists every worktree of the active repository with its branch, working-tree counts, and lock or prune state, and opens one in this window, alongside it, or in a new window; worktrees can also be created, moved, locked, removed, and pruned from the same list.
 - **Cross-worktree branches**: a branch already checked out in another worktree is marked as such and offers to open that worktree, since Git allows one worktree per branch and would refuse the checkout.
