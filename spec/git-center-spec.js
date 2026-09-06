@@ -259,6 +259,48 @@ describe("git-center", () => {
     lumine.repositories.setActiveRepository(null);
   });
 
+  it("describes the status-bar mouse actions in composite tooltips", () => {
+    const addComposite = spyOn(lumine.tooltips, "addComposite").and.callThrough();
+    const repositoryView = mainModule.repositoryStatusView;
+    const branchView = mainModule.branchStatusView;
+    const entriesFor = (element) =>
+      addComposite.calls
+        .allArgs()
+        .filter(([target]) => target === element)
+        .at(-1)[1];
+
+    repositoryView.update();
+    branchView.update();
+
+    const repositoryEntries = entriesFor(repositoryView.element);
+    expect(repositoryEntries.find(({ keyBindingExtra }) => keyBindingExtra === "LMB")).toEqual(
+      jasmine.objectContaining({
+        title: "Select repository",
+        keyBindingCommand: "git-center:select-repository",
+      }),
+    );
+    expect(repositoryEntries.find(({ keyBindingExtra }) => keyBindingExtra === "MMB")).toEqual(
+      jasmine.objectContaining({
+        title: "Lock repository",
+        keyBindingCommand: "git-center:toggle-lock",
+      }),
+    );
+
+    const branchEntries = entriesFor(branchView.element);
+    expect(branchEntries.find(({ keyBindingExtra }) => keyBindingExtra === "LMB")).toEqual(
+      jasmine.objectContaining({
+        title: "Select branch",
+        keyBindingCommand: "git-center:select-branch",
+      }),
+    );
+    expect(branchEntries.some(({ keyBindingExtra }) => keyBindingExtra === "MMB")).toBe(false);
+
+    lumine.repositories.setActiveRepository(repoA.repository, { pin: true });
+    expect(
+      entriesFor(repositoryView.element).find(({ keyBindingExtra }) => keyBindingExtra === "MMB"),
+    ).toEqual(jasmine.objectContaining({ title: "Unlock repository" }));
+  });
+
   it("keeps the repository tile visible but hides the branch tile without a repository", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const branchView = mainModule.branchStatusView;
