@@ -387,7 +387,7 @@ describe("git-center", () => {
     expect(items.some((item) => item.update)).toBe(false);
     const updateRepositories = selectList
       .getAvailableActions()
-      .find((action) => action.command === "git-center:refresh-repositories");
+      .find((action) => action.command === "git-center:update-repositories");
     expect(updateRepositories).toEqual(
       jasmine.objectContaining({
         name: "Update Repositories",
@@ -462,7 +462,7 @@ describe("git-center", () => {
     spyOn(selectList, "getScrollTop").and.returnValue(41);
 
     expect(selectList.getItems().some((item) => item.update)).toBe(false);
-    const updateAction = selectList.runAction("git-center:refresh-repositories");
+    const updateAction = selectList.runAction("git-center:update-repositories");
     await conditionPromise(() => scan.calls.any());
     expect(scan).toHaveBeenCalled();
     expect(repositoryListView.selectListHost.isVisible()).toBe(true);
