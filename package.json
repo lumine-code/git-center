@@ -29,16 +29,18 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "You can check out another branch of the active repository with {{ 'git-center:select-branch' | keystroke }}",
-    "You can open any worktree of the active repository with {{ 'git-center:select-worktree' | keystroke }}",
-    "Right-click the branch tile to fetch, pull, push, or force-push the active branch."
-  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
+  },
+  "providedServices": {
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
+    }
   },
   "consumedServices": {
     "status-bar": {
