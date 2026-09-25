@@ -301,6 +301,75 @@ describe("git-center", () => {
     ).toEqual(jasmine.objectContaining({ title: "Unlock repository" }));
   });
 
+  it("animates the branch tile while remote operations are running", async () => {
+    let finishOperation = null;
+    let runningOperation = null;
+    let pendingOperation = null;
+    const operationProvider = lumine.repositories.addOperationProvider({
+      createRepositoryOperations() {
+        const run = (name) =>
+          new Promise((resolve) => {
+            runningOperation = name;
+            finishOperation = resolve;
+          });
+        return {
+          fetch: () => run("fetch"),
+          getOperationRefreshHint: () => "none",
+          pull: () => run("pull"),
+          push: () => run("push"),
+        };
+      },
+    });
+    const branchView = mainModule.branchStatusView;
+    const operations = repoA.repository.getOperations();
+    const cases = [
+      {
+        animationClass: "animate-rotate",
+        iconClass: "icon-sync",
+        invoke: () => operations.fetch("origin", null),
+        name: "fetch",
+      },
+      {
+        animationClass: "animate-down",
+        iconClass: "icon-arrow-down",
+        invoke: () => operations.pull("origin", "main"),
+        name: "pull",
+      },
+      {
+        animationClass: "animate-up",
+        iconClass: "icon-arrow-up",
+        invoke: () => operations.push("origin", "main"),
+        name: "push",
+      },
+    ];
+
+    try {
+      for (const operation of cases) {
+        runningOperation = null;
+        finishOperation = null;
+        pendingOperation = operation.invoke();
+        await conditionPromise(() => runningOperation === operation.name);
+
+        expect(branchView.branchIcon.classList.contains("icon-git-branch")).toBe(false);
+        expect(branchView.branchIcon.classList.contains(operation.iconClass)).toBe(true);
+        expect(branchView.branchIcon.classList.contains(operation.animationClass)).toBe(true);
+        expect(branchView.element.getAttribute("aria-busy")).toBe("true");
+
+        finishOperation();
+        await pendingOperation;
+
+        expect(branchView.branchIcon.classList.contains("icon-git-branch")).toBe(true);
+        expect(branchView.branchIcon.classList.contains(operation.iconClass)).toBe(false);
+        expect(branchView.branchIcon.classList.contains(operation.animationClass)).toBe(false);
+        expect(branchView.element.hasAttribute("aria-busy")).toBe(false);
+      }
+    } finally {
+      finishOperation?.();
+      await pendingOperation?.catch(() => {});
+      operationProvider.dispose();
+    }
+  });
+
   it("keeps the repository tile visible but hides the branch tile without a repository", () => {
     const repositoryView = mainModule.repositoryStatusView;
     const branchView = mainModule.branchStatusView;

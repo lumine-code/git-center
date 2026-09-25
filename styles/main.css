@@ -23,6 +23,63 @@
   margin-left: 0.5em;
 }
 
+/* Remote operations reuse the directional motion from Git Panel's former
+   synchronization tile: fetch spins, pull travels down, and push travels up. */
+@keyframes git-center-branch-operation-fade {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.git-center-branch-icon.animate-rotate::before {
+  animation: git-center-branch-operation-rotate 1s linear infinite;
+}
+
+@keyframes git-center-branch-operation-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.git-center-branch-icon.animate-up::before {
+  animation:
+    git-center-branch-operation-up 800ms ease-out infinite,
+    git-center-branch-operation-fade 800ms ease-out infinite;
+}
+
+@keyframes git-center-branch-operation-up {
+  0% {
+    transform: translateY(40%);
+  }
+  100% {
+    transform: translateY(-20%);
+  }
+}
+
+.git-center-branch-icon.animate-down::before {
+  animation:
+    git-center-branch-operation-down 800ms ease-out infinite,
+    git-center-branch-operation-fade 800ms ease-out infinite;
+}
+
+@keyframes git-center-branch-operation-down {
+  0% {
+    transform: translateY(-20%);
+  }
+  100% {
+    transform: translateY(40%);
+  }
+}
+
 .git-center-count,
 .git-center-ahead,
 .git-center-behind,
