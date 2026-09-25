@@ -14,13 +14,18 @@
   }
 }
 
-/* Chip layout. Counts are tabular so the tiles stop shifting sideways as the
-   numbers change width. */
+/* Chip layout. The chips keep the status bar's standard typography so their
+   numbers match the repository and branch labels. */
 .git-center-status {
   display: inline-flex;
   align-items: baseline;
   gap: 0.5em;
   margin-left: 0.5em;
+
+  > span {
+    font-size: inherit;
+    font-variant-numeric: normal;
+  }
 }
 
 /* Remote operations reuse the directional motion from Git Panel's former
@@ -78,13 +83,6 @@
   100% {
     transform: translateY(40%);
   }
-}
-
-.git-center-count,
-.git-center-ahead,
-.git-center-behind,
-.git-center-gone {
-  font-variant-numeric: tabular-nums;
 }
 
 /* File status colors come from core's git-status.css. Only the upstream chips

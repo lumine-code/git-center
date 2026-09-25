@@ -804,6 +804,8 @@ describe("git-center", () => {
     expect(chipTexts(repositoryView.statusLabel)).toEqual(["+1", "~1", "-1"]);
     expect(chipClass(repositoryView.statusLabel, "+1")).toBe("git-center-count status-added");
     expect(chipClass(repositoryView.statusLabel, "-1")).toBe("git-center-count status-removed");
+    const countStyle = getComputedStyle(repositoryView.statusLabel.firstElementChild);
+    expect(countStyle.fontSize).toBe(getComputedStyle(repositoryView.nameLabel).fontSize);
 
     await mainModule.getRepositoryListView().toggle();
     const selectList = mainModule.repositoryListView.selectList;
