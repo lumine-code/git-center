@@ -34,7 +34,7 @@ function statusSnapshot(files) {
 }
 
 function chipTexts(element) {
-  return Array.from(element.querySelectorAll("span"), (span) => span.textContent);
+  return Array.from(element.children, (child) => child.textContent);
 }
 
 function chipClass(element, text) {
@@ -123,6 +123,7 @@ describe("git-center status summary", () => {
 
     const chips = divergenceChips({ name: "origin/main", ahead: 2, behind: 1 });
     expect(chips.map((chip) => chip.text)).toEqual(["↑2", "↓1"]);
+    expect(chips.map((chip) => chip.direction)).toEqual(["↑", "↓"]);
     expect(divergenceTooltipLine({ name: "origin/main", ahead: 2, behind: 1 })).toBe(
       "2 ahead, 1 behind of origin/main",
     );
@@ -879,6 +880,12 @@ describe("git-center", () => {
     const branchView = mainModule.branchStatusView;
     branchView.update();
     expect(chipTexts(branchView.divergenceLabel)).toEqual(["↑1"]);
+    const direction = branchView.divergenceLabel.querySelector(".git-center-direction");
+    expect(direction.textContent).toBe("↑");
+    jasmine.attachToDOM(branchView.element);
+    expect(parseFloat(getComputedStyle(direction).fontSize)).toBeGreaterThan(
+      parseFloat(getComputedStyle(branchView.branchLabel).fontSize),
+    );
 
     // The branch picker reads its counts per branch, from the refs snapshot.
     await mainModule.getBranchListView().toggle();
