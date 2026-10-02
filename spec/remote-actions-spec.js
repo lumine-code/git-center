@@ -13,7 +13,7 @@ function buildRepository({
   };
   const repository = {
     getOperations: () => operations,
-    ensureRefsSnapshot: () =>
+    refreshRefsSnapshot: () =>
       Promise.resolve({
         branches: [{ name: "main", isHead: true, upstream, push }],
         remotes: remotes.map((name) => ({ name })),
@@ -23,6 +23,27 @@ function buildRepository({
 }
 
 describe("Git Center remote actions", () => {
+  it("awaits fresh branch routing before pushing instead of using cached refs", async () => {
+    const { operations, repository } = buildRepository();
+    repository.ensureRefsSnapshot = jasmine.createSpy("ensureRefsSnapshot");
+    let finish;
+    repository.refreshRefsSnapshot = jasmine
+      .createSpy("refreshRefsSnapshot")
+      .and.returnValue(new Promise((resolve) => (finish = resolve)));
+    const pushing = pushRemote(repository);
+    expect(operations.push).not.toHaveBeenCalled();
+    finish({
+      branches: [{ name: "current", isHead: true, upstream: { name: "fresh/current" } }],
+      remotes: [{ name: "fresh" }],
+    });
+    expect(await pushing).toBe(true);
+    expect(repository.refreshRefsSnapshot).toHaveBeenCalledTimes(1);
+    expect(repository.ensureRefsSnapshot).not.toHaveBeenCalled();
+    expect(operations.push).toHaveBeenCalledWith("fresh", "current", {
+      force: false,
+      setUpstream: false,
+    });
+  });
   it("fetches and pulls the active branch's upstream through core operations", async () => {
     const { operations, repository } = buildRepository();
 

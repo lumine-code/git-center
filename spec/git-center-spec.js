@@ -9,7 +9,7 @@ const {
   statusTooltipLine,
   summarizeStatus,
 } = require("../lib/status-summary");
-const { buildRepositoryItems } = require("../lib/helpers");
+const { buildRepositoryItems, headUpstream } = require("../lib/helpers");
 
 function makeWorkdir(prefix) {
   return fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
@@ -260,6 +260,44 @@ describe("git-center", () => {
     lumine.repositories.setActiveRepository(null);
   });
 
+  it("keeps the branch tile current without subscribing to full refs", () => {
+    const BranchStatusView = require("../lib/branch-status-view");
+    const refsInterest = spyOn(repoA.repository, "onDidChangeRefsSnapshot").and.callThrough();
+    const refsRead = spyOn(repoA.repository, "getRefsSnapshot").and.callThrough();
+    const view = new BranchStatusView();
+    try {
+      view.update();
+      expect(view.branchLabel.textContent).toBe("main");
+      expect(refsInterest).not.toHaveBeenCalled();
+      expect(refsRead).not.toHaveBeenCalled();
+      expect(repoA.repository.refsSnapshotSubscriberCount).toBe(0);
+    } finally {
+      view.destroy();
+    }
+  });
+
+  it("uses fresh status for the tile while full-ref consumers retain their preference", () => {
+    const current = { name: "origin/current", ahead: 0, behind: 0, gone: true };
+    const previous = { name: "origin/previous", ahead: 0, behind: 0 };
+    const repository = {
+      getStatusSnapshot: () => ({
+        initialized: true,
+        head: { unborn: false, detached: false },
+        upstream: current,
+      }),
+      getRefsSnapshot: jasmine
+        .createSpy("getRefsSnapshot")
+        .and.returnValue({ initialized: true, branches: [{ isHead: true, upstream: previous }] }),
+    };
+    expect(headUpstream(repository, { preferStatus: true })).toBe(current);
+    expect(repository.getRefsSnapshot).not.toHaveBeenCalled();
+    expect(headUpstream(repository)).toBe(previous);
+    for (const head of [{ unborn: true }, { detached: true }]) {
+      repository.getStatusSnapshot = () => ({ initialized: true, head, upstream: current });
+      expect(headUpstream(repository, { preferStatus: true })).toBeNull();
+    }
+  });
+
   it("describes the status-bar mouse actions in composite tooltips", () => {
     const addComposite = spyOn(lumine.tooltips, "addComposite").and.callThrough();
     const repositoryView = mainModule.repositoryStatusView;
@@ -446,6 +484,8 @@ describe("git-center", () => {
     const ensureStatusB = spyOn(repoB.repository, "ensureStatusSnapshot").and.callThrough();
     const ensureRefsA = spyOn(repoA.repository, "ensureRefsSnapshot").and.callThrough();
     const ensureRefsB = spyOn(repoB.repository, "ensureRefsSnapshot").and.callThrough();
+    const refreshRefsA = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
+    const refreshRefsB = spyOn(repoB.repository, "refreshRefsSnapshot").and.callThrough();
     await mainModule.getRepositoryListView().toggle();
     const { selectListHost, selectList } = mainModule.repositoryListView;
     expect(selectListHost.isVisible()).toBe(true);
@@ -469,6 +509,8 @@ describe("git-center", () => {
     expect(ensureStatusB).toHaveBeenCalledTimes(1);
     expect(ensureRefsA).not.toHaveBeenCalled();
     expect(ensureRefsB).not.toHaveBeenCalled();
+    expect(refreshRefsA).not.toHaveBeenCalled();
+    expect(refreshRefsB).not.toHaveBeenCalled();
     const autoElement = Array.from(selectList.getElement().querySelectorAll(".list-group li")).find(
       (element) => element.textContent.includes("Auto"),
     );
@@ -684,13 +726,67 @@ describe("git-center", () => {
   });
 
   it("loads refs only for the active repository in the branch picker", async () => {
-    const ensureRefsA = spyOn(repoA.repository, "ensureRefsSnapshot").and.callThrough();
-    const ensureRefsB = spyOn(repoB.repository, "ensureRefsSnapshot").and.callThrough();
+    const ensureRefsA = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
+    const ensureRefsB = spyOn(repoB.repository, "refreshRefsSnapshot").and.callThrough();
 
     await mainModule.getBranchListView().toggle();
 
     expect(ensureRefsA).toHaveBeenCalled();
     expect(ensureRefsB).not.toHaveBeenCalled();
+  });
+
+  it("refreshes idle refs once when the branch picker opens and again after reopening", async () => {
+    await repoA.repository.refreshRefsSnapshot();
+    const view = mainModule.getBranchListView();
+    const refresh = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
+    expect(refresh).not.toHaveBeenCalled();
+    await lumine.repositories.executeGit(
+      ["branch", "created-while-closed"],
+      repoA.workingDirectory,
+    );
+    expect(
+      repoA.repository
+        .getRefsSnapshot()
+        .branches.some((branch) => branch.name === "created-while-closed"),
+    ).toBe(false);
+    await view.toggle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(view.selectList.getItems().some((item) => item.branch === "created-while-closed")).toBe(
+      true,
+    );
+    await view.toggle();
+    expect(repoA.repository.refsSnapshotSubscriberCount).toBe(0);
+    refresh.calls.reset();
+    await lumine.repositories.executeGit(["branch", "created-after-close"], repoA.workingDirectory);
+    expect(refresh).not.toHaveBeenCalled();
+    await view.toggle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(view.selectList.getItems().some((item) => item.branch === "created-after-close")).toBe(
+      true,
+    );
+  });
+
+  it("refreshes the worktree picker after external changes while it was closed", async () => {
+    await repoA.repository.refreshRefsSnapshot();
+    const view = mainModule.getWorktreeListView();
+    const refresh = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
+    const worktree = path.join(makeWorkdir("git-center-external-worktree-"), "linked");
+    await lumine.repositories.executeGit(
+      ["worktree", "add", "-b", "external-worktree", worktree],
+      repoA.workingDirectory,
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    await view.toggle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(view.selectList.getItems().some((item) => item.path === worktree)).toBe(true);
+    await view.toggle();
+    expect(repoA.repository.refsSnapshotSubscriberCount).toBe(0);
+    refresh.calls.reset();
+    await lumine.repositories.executeGit(["worktree", "remove", worktree], repoA.workingDirectory);
+    expect(refresh).not.toHaveBeenCalled();
+    await view.toggle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(view.selectList.getItems().some((item) => item.path === worktree)).toBe(false);
   });
 
   it("lists local branches, remote branches, and tags with last-commit details", async () => {
@@ -869,6 +965,7 @@ describe("git-center", () => {
     fs.writeFileSync(path.join(repoA.workingDirectory, "ahead.txt"), "ahead\n");
     await operations.stageFiles(["ahead.txt"]);
     await operations.commit("Commit that the remote does not have");
+    await operations.setConfig("status.aheadBehind", "false");
     await repoA.repository.refreshStatusSnapshot();
     await repoA.repository.refreshRefsSnapshot();
 
@@ -905,10 +1002,8 @@ describe("git-center", () => {
   });
 
   it("reports a deleted upstream instead of claiming the branch is up to date", async () => {
-    // Git omits the `branch.ab` header once the upstream commit is gone, which
-    // parses as zero ahead and zero behind — so the status snapshot cannot tell
-    // "up to date" from "upstream deleted". Only the refs snapshot carries
-    // `gone`, which is why the tile reads its upstream from there.
+    // The tile keeps working when the initialized refs snapshot predates a
+    // prune: current status alone identifies the missing upstream commit.
     const operations = repoA.repository.getOperations();
     const remoteDir = makeWorkdir("git-center-gone-remote-");
     await lumine.repositories.executeGit(
@@ -917,26 +1012,53 @@ describe("git-center", () => {
     );
     await operations.addRemote("origin", remoteDir);
     await operations.push("origin", "main", { setUpstream: true });
+    await repoA.repository.refreshRefsSnapshot();
+    const previousRefs = repoA.repository.getRefsSnapshot();
 
     // Delete the branch on the remote and prune, leaving the tracking config.
     await lumine.repositories.executeGit(["branch", "-D", "main"], remoteDir);
-    await operations.fetch("origin", null, { prune: true });
+    await lumine.repositories.executeGit(["fetch", "--prune", "origin"], repoA.workingDirectory);
     await repoA.repository.refreshStatusSnapshot();
-    await repoA.repository.refreshRefsSnapshot();
 
     const snapshot = repoA.repository.getStatusSnapshot();
     const refsUpstream = repoA.repository
       .getRefsSnapshot()
       .branches.find((branch) => branch.isHead).upstream;
-    // The precondition this whole fix rests on: the status snapshot looks clean.
+    expect(repoA.repository.getRefsSnapshot()).toBe(previousRefs);
     expect(snapshot.upstream && snapshot.upstream.ahead).toBe(0);
     expect(snapshot.upstream && snapshot.upstream.behind).toBe(0);
-    expect(refsUpstream.gone).toBe(true);
+    expect(snapshot.upstream.gone).toBe(true);
+    expect(refsUpstream.gone).toBe(false);
 
     const branchView = mainModule.branchStatusView;
     branchView.update();
     expect(chipTexts(branchView.divergenceLabel)).toEqual(["gone"]);
     expect(branchView.branchTooltipDisposable).toBeTruthy();
+  });
+
+  it("does not label an existing unborn upstream as gone", async () => {
+    const directory = makeWorkdir("git-center-unborn-upstream-");
+    const repository = await lumine.repositories.initialize(directory, { initialBranch: "future" });
+    try {
+      const operations = repository.getOperations();
+      await operations.addRemote("origin", repoA.workingDirectory);
+      await operations.setConfig("branch.future.remote", "origin");
+      await operations.setConfig("branch.future.merge", "refs/heads/main");
+      await lumine.repositories.executeGit(["fetch", "origin", "main"], directory);
+      await repository.refreshStatusSnapshot();
+      const snapshot = repository.getStatusSnapshot();
+      expect(snapshot.head.unborn).toBe(true);
+      expect(snapshot.upstream.name).toBe("origin/main");
+      expect(snapshot.upstream.gone).toBeUndefined();
+      lumine.repositories.setActiveRepository(repository);
+      mainModule.branchStatusView.update();
+      expect(mainModule.branchStatusView.branchLabel.textContent).toBe("future");
+      expect(chipTexts(mainModule.branchStatusView.divergenceLabel)).toEqual([]);
+      expect(headUpstream(repository, { preferStatus: true })).toBeNull();
+    } finally {
+      lumine.repositories.setActiveRepository(repoA.repository);
+      lumine.repositories.forget(repository);
+    }
   });
 
   it("enters the repository list at either end when nothing is active", () => {
