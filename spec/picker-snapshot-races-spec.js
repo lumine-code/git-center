@@ -36,6 +36,43 @@ function fakeRepository() {
 }
 
 describe("picker snapshot boundaries", () => {
+  it("shares the worktree picker's refresh and uses a newer published HEAD for its create dialog", async () => {
+    const WorktreeListView = require("../lib/worktree-list-view");
+    const repository = fakeRepository();
+    const loaded = repository.state.refs;
+    let finish;
+    const view = Object.create(WorktreeListView.prototype);
+    view.refsRefresh = {
+      repository,
+      pending: true,
+      promise: new Promise((resolve) => {
+        finish = resolve;
+      }),
+    };
+    view.textDialog = { show: jasmine.createSpy("create worktree dialog") };
+    repository.ensureRefsSnapshot = jasmine.createSpy("ensure refs").and.resolveTo(loaded);
+    const opening = view.showCreateDialog(repository);
+    repository.state.refs = { ...loaded, generation: 2, head: { name: "newer" } };
+    finish(loaded);
+    await opening;
+    expect(path.basename(view.textDialog.show.calls.mostRecent().args[0].value)).toBe("repo-newer");
+    expect(repository.refreshRefsSnapshot).not.toHaveBeenCalled();
+    expect(repository.ensureRefsSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("ensures refs only when the create dialog has no picker refresh to share", async () => {
+    const WorktreeListView = require("../lib/worktree-list-view");
+    const repository = fakeRepository();
+    repository.ensureRefsSnapshot = jasmine
+      .createSpy("ensure refs")
+      .and.resolveTo(repository.state.refs);
+    const view = Object.create(WorktreeListView.prototype);
+    view.textDialog = { show: jasmine.createSpy("create worktree dialog") };
+    await view.showCreateDialog(repository);
+    expect(repository.ensureRefsSnapshot).toHaveBeenCalledOnceWith();
+    expect(repository.refreshRefsSnapshot).not.toHaveBeenCalled();
+  });
+
   for (const [modulePath, load, build, refresh] of [
     ["../lib/branch-list-view", "loadBranchItems", "buildCheckoutGroups", "requestBranchRefresh"],
     ["../lib/worktree-list-view", "loadItems", "buildWorktreeItems", "requestRefresh"],

@@ -4,6 +4,8 @@ Show the active Git repository, branch, and working-tree status in the status ba
 
 Ahead and behind counts compare local refs only; nothing here fetches on your behalf, so they move when you do.
 
+Remote actions use the editor's shared push protection, force-push confirmation, and pull settings.
+
 ## Features
 
 - **Repository tile**: shows the window's active repository and how many files are added, modified, deleted, or conflicted, or the focused folder dimmed when it is not part of a repository; `Auto` follows the active workspace item, while the optional Auto Lock Repository setting pins repositories chosen from the picker.

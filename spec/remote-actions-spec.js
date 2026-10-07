@@ -1,80 +1,63 @@
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const { execFileSync } = require("child_process");
 const { fetchRemote, forcePushRemote, pullRemote, pushRemote } = require("../lib/remote-actions");
 
-function buildRepository({
-  upstream = { name: "origin/main" },
-  push = null,
-  remotes = ["origin"],
-} = {}) {
+function buildRepository() {
   const operations = {
     isAvailable: jasmine.createSpy("isAvailable").and.returnValue(true),
-    fetch: jasmine.createSpy("fetch").and.resolveTo(),
-    pull: jasmine.createSpy("pull").and.resolveTo(),
-    push: jasmine.createSpy("push").and.resolveTo(),
+    fetchCurrent: jasmine.createSpy("fetch current branch").and.resolveTo(),
+    pullCurrent: jasmine.createSpy("pull current branch").and.resolveTo(),
+    pushCurrent: jasmine.createSpy("push current branch").and.resolveTo(),
   };
-  const repository = {
-    getOperations: () => operations,
-    refreshRefsSnapshot: () =>
-      Promise.resolve({
-        branches: [{ name: "main", isHead: true, upstream, push }],
-        remotes: remotes.map((name) => ({ name })),
-      }),
-  };
-  return { operations, repository };
+  return { operations, repository: { getOperations: () => operations } };
 }
 
 describe("Git Center remote actions", () => {
-  it("awaits fresh branch routing before pushing instead of using cached refs", async () => {
+  it("delegates current-branch selection and remote policy to core", async () => {
     const { operations, repository } = buildRepository();
-    repository.ensureRefsSnapshot = jasmine.createSpy("ensureRefsSnapshot");
-    let finish;
-    repository.refreshRefsSnapshot = jasmine
-      .createSpy("refreshRefsSnapshot")
-      .and.returnValue(new Promise((resolve) => (finish = resolve)));
-    const pushing = pushRemote(repository);
-    expect(operations.push).not.toHaveBeenCalled();
-    finish({
-      branches: [{ name: "current", isHead: true, upstream: { name: "fresh/current" } }],
-      remotes: [{ name: "fresh" }],
-    });
-    expect(await pushing).toBe(true);
-    expect(repository.refreshRefsSnapshot).toHaveBeenCalledTimes(1);
-    expect(repository.ensureRefsSnapshot).not.toHaveBeenCalled();
-    expect(operations.push).toHaveBeenCalledWith("fresh", "current", {
-      force: false,
-      setUpstream: false,
-    });
-  });
-  it("fetches and pulls the active branch's upstream through core operations", async () => {
-    const { operations, repository } = buildRepository();
-
     expect(await fetchRemote(repository)).toBe(true);
     expect(await pullRemote(repository)).toBe(true);
-
-    expect(operations.fetch).toHaveBeenCalledWith("origin", null);
-    expect(operations.pull).toHaveBeenCalledWith("origin", "main");
+    expect(await pushRemote(repository)).toBe(true);
+    expect(await forcePushRemote(repository)).toBe(true);
+    expect(operations.fetchCurrent).toHaveBeenCalledOnceWith({});
+    expect(operations.pullCurrent).toHaveBeenCalledOnceWith({});
+    expect(operations.pushCurrent.calls.allArgs()).toEqual([[{}], [{ force: true }]]);
   });
 
-  it("pushes normally or forcibly and sets an upstream for an untracked branch", async () => {
-    const tracked = buildRepository();
-    expect(await pushRemote(tracked.repository)).toBe(true);
-    expect(await forcePushRemote(tracked.repository)).toBe(true);
-    expect(tracked.operations.push.calls.argsFor(0)).toEqual([
-      "origin",
-      "main",
-      { force: false, setUpstream: false },
-    ]);
-    expect(tracked.operations.push.calls.argsFor(1)).toEqual([
-      "origin",
-      "main",
-      { force: true, setUpstream: false },
-    ]);
-
-    const untracked = buildRepository({ upstream: null });
-    expect(await pushRemote(untracked.repository)).toBe(true);
-    expect(untracked.operations.push).toHaveBeenCalledWith("origin", "main", {
-      force: false,
-      setUpstream: true,
+  it("waits for the core workflow before reporting success", async () => {
+    const { operations, repository } = buildRepository();
+    let finish;
+    operations.pushCurrent.and.returnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    let resolved = false;
+    const pushing = pushRemote(repository).then((result) => {
+      resolved = true;
+      return result;
     });
+    expect(resolved).toBe(false);
+    finish();
+    expect(await pushing).toBe(true);
+  });
+
+  it("explains unavailable actions and unknown outcomes", async () => {
+    const { operations, repository } = buildRepository();
+    const warning = spyOn(lumine.notifications, "addWarning");
+    const error = spyOn(lumine.notifications, "addError");
+    operations.isAvailable.and.returnValue(false);
+    expect(await pushRemote(repository)).toBe(false);
+    expect(warning).toHaveBeenCalledTimes(1);
+    expect(operations.pushCurrent).not.toHaveBeenCalled();
+    operations.isAvailable.and.returnValue(true);
+    operations.pushCurrent.and.rejectWith(
+      Object.assign(new Error("Worker exited"), { outcome: "unknown" }),
+    );
+    expect(await pushRemote(repository)).toBe(false);
+    expect(error.calls.mostRecent().args[0]).toContain("outcome is unknown");
   });
 
   it("owns the branch tile's context menu without naming Git Panel commands", () => {
@@ -89,5 +72,54 @@ describe("Git Center remote actions", () => {
       "git-center:force-push",
     ]);
     expect(commands.some((command) => command.startsWith("git-panel:"))).toBe(false);
+  });
+});
+
+describe("Git Center with core remote policy", () => {
+  let directory, registration, provider, repository, push;
+  beforeEach(async () => {
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), "git-center-remote-policy-"));
+    execFileSync("git", ["init", "--quiet", "--initial-branch=main", directory], {
+      windowsHide: true,
+    });
+    registration = await lumine.repositories.add(directory, { persist: false });
+    repository = registration.repository;
+    spyOn(repository, "refreshRefsSnapshot").and.resolveTo({
+      branches: [{ name: "main", isHead: true, upstream: { name: "origin/main" }, push: null }],
+      remotes: [{ name: "origin" }],
+    });
+    spyOn(repository, "refreshStatusSnapshot").and.resolveTo({
+      initialized: true,
+      head: { name: "main", oid: null },
+    });
+    push = jasmine.createSpy("push backend").and.resolveTo("pushed");
+    provider = lumine.repositories.addOperationProvider({
+      createRepositoryOperations: () => ({ push }),
+    });
+  });
+
+  afterEach(() => {
+    provider?.dispose();
+    registration?.dispose();
+    if (directory) fs.rmSync(directory, { recursive: true, force: true });
+  });
+
+  it("blocks a protected branch without invoking the push backend", async () => {
+    lumine.config.set("git.protectPushes", true);
+    lumine.config.set("git.protectedBranches", ["main"]);
+    const warning = spyOn(lumine.notifications, "addWarning");
+    expect(await pushRemote(repository)).toBe(false);
+    expect(push).not.toHaveBeenCalled();
+    expect(warning.calls.mostRecent().args[1].detail).toContain("protected branch main");
+  });
+
+  it("respects cancellation of core's force-push confirmation", async () => {
+    lumine.config.set("git.protectPushes", false);
+    lumine.config.set("git.confirmForcePush", true);
+    const confirm = spyOn(lumine.applicationDelegate, "confirm").and.resolveTo(1);
+    spyOn(lumine.notifications, "addWarning");
+    expect(await forcePushRemote(repository)).toBe(false);
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(push).not.toHaveBeenCalled();
   });
 });

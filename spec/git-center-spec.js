@@ -1,6 +1,8 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { promisify } = require("util");
+const execFile = promisify(require("child_process").execFile);
 
 const {
   divergenceChips,
@@ -56,14 +58,19 @@ async function initializeRepository(prefix) {
   return { workingDirectory, repository };
 }
 
-// A linked worktree of an existing repository, on a branch of its own. The refs
-// snapshot is refreshed here because a worktree operation reports "refs", which
-// the registry refreshes detached — the operation resolves before it lands.
+// Callers inspect the worktree map immediately. Core refreshes initialized refs
+// after writes; ensure loads it once if this is the first consumer.
 async function addWorktree(repository, prefix, branch) {
   const worktreePath = path.join(makeWorkdir(prefix), branch);
   await repository.getOperations().worktreeAdd(worktreePath, { branch });
-  await repository.refreshRefsSnapshot();
+  await repository.ensureRefsSnapshot();
   return worktreePath;
+}
+
+// These scenarios exercise changes made outside the editor while its pickers
+// are closed. Core operations deliberately publish fresh snapshots on success.
+function externalGit(args, workingDirectory) {
+  return execFile("git", ["-C", workingDirectory, ...args], { windowsHide: true });
 }
 
 describe("git-center status summary", () => {
@@ -341,6 +348,11 @@ describe("git-center", () => {
   });
 
   it("animates the branch tile while remote operations are running", async () => {
+    const operations = repoA.repository.getOperations();
+    // Current-branch workflows use a real local upstream while the provider
+    // below holds their writes, so this exercises routing without a network.
+    await operations.setConfig("branch.main.remote", ".");
+    await operations.setConfig("branch.main.merge", "refs/heads/main");
     let finishOperation = null;
     let runningOperation = null;
     let pendingOperation = null;
@@ -360,7 +372,6 @@ describe("git-center", () => {
       },
     });
     const branchView = mainModule.branchStatusView;
-    const operations = repoA.repository.getOperations();
     const cases = [
       {
         animationClass: "animate-rotate",
@@ -381,6 +392,12 @@ describe("git-center", () => {
         name: "push",
       },
     ];
+    cases.push(
+      ...cases.map(({ invoke: _invoke, ...operation }) => ({
+        ...operation,
+        invoke: () => operations[`${operation.name}Current`](),
+      })),
+    );
 
     try {
       for (const operation of cases) {
@@ -740,10 +757,7 @@ describe("git-center", () => {
     const view = mainModule.getBranchListView();
     const refresh = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
     expect(refresh).not.toHaveBeenCalled();
-    await lumine.repositories.executeGit(
-      ["branch", "created-while-closed"],
-      repoA.workingDirectory,
-    );
+    await externalGit(["branch", "created-while-closed"], repoA.workingDirectory);
     expect(
       repoA.repository
         .getRefsSnapshot()
@@ -757,7 +771,7 @@ describe("git-center", () => {
     await view.toggle();
     expect(repoA.repository.refsSnapshotSubscriberCount).toBe(0);
     refresh.calls.reset();
-    await lumine.repositories.executeGit(["branch", "created-after-close"], repoA.workingDirectory);
+    await externalGit(["branch", "created-after-close"], repoA.workingDirectory);
     expect(refresh).not.toHaveBeenCalled();
     await view.toggle();
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -771,7 +785,7 @@ describe("git-center", () => {
     const view = mainModule.getWorktreeListView();
     const refresh = spyOn(repoA.repository, "refreshRefsSnapshot").and.callThrough();
     const worktree = path.join(makeWorkdir("git-center-external-worktree-"), "linked");
-    await lumine.repositories.executeGit(
+    await externalGit(
       ["worktree", "add", "-b", "external-worktree", worktree],
       repoA.workingDirectory,
     );
@@ -782,7 +796,7 @@ describe("git-center", () => {
     await view.toggle();
     expect(repoA.repository.refsSnapshotSubscriberCount).toBe(0);
     refresh.calls.reset();
-    await lumine.repositories.executeGit(["worktree", "remove", worktree], repoA.workingDirectory);
+    await externalGit(["worktree", "remove", worktree], repoA.workingDirectory);
     expect(refresh).not.toHaveBeenCalled();
     await view.toggle();
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -1016,8 +1030,8 @@ describe("git-center", () => {
     const previousRefs = repoA.repository.getRefsSnapshot();
 
     // Delete the branch on the remote and prune, leaving the tracking config.
-    await lumine.repositories.executeGit(["branch", "-D", "main"], remoteDir);
-    await lumine.repositories.executeGit(["fetch", "--prune", "origin"], repoA.workingDirectory);
+    await externalGit(["branch", "-D", "main"], remoteDir);
+    await externalGit(["fetch", "--prune", "origin"], repoA.workingDirectory);
     await repoA.repository.refreshStatusSnapshot();
 
     const snapshot = repoA.repository.getStatusSnapshot();
