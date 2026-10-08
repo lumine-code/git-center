@@ -945,10 +945,19 @@ describe("git-center", () => {
       (element) => element.textContent.includes(path.basename(repoA.workingDirectory)),
     );
 
-    // Floating the block blockifies its display, which is why the rule says flex.
-    const block = getComputedStyle(row.querySelector(".trailing-block"));
-    expect(block.float).toBe("right");
-    expect(block.display).toBe("flex");
+    const line = row.querySelector(".primary-line").getBoundingClientRect();
+    const label = row.querySelector(".primary-text").getBoundingClientRect();
+    const trailing = row.querySelector(".trailing-block").getBoundingClientRect();
+    expect(label.right).toBeLessThanOrEqual(trailing.left);
+    expect(trailing.right).toBeLessThanOrEqual(line.right);
+    for (const chip of row.querySelector(".trailing-block").children) {
+      const rect = chip.getBoundingClientRect();
+      expect(rect.top).toBeGreaterThanOrEqual(line.top);
+      expect(rect.bottom).toBeLessThanOrEqual(line.bottom);
+      expect(
+        Math.abs(rect.top + rect.height / 2 - (line.top + line.height / 2)),
+      ).toBeLessThanOrEqual(1);
+    }
 
     const colorOf = (selector) => getComputedStyle(row.querySelector(selector)).color;
     const plain = colorOf(".primary-text");
