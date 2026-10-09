@@ -122,6 +122,7 @@ describe("picker snapshot boundaries", () => {
       spyOn(lumine.repositories, "getActiveRepository").and.returnValue(repository);
       spyOn(lumine.workspace, "addInputDialog").and.returnValue({
         getModel: () => ({}),
+        onDidHide: () => new Disposable(),
         destroy: () => Promise.resolve(),
       });
       const hosts = [];
