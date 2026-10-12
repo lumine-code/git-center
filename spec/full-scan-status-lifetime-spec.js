@@ -1,3 +1,4 @@
+const windowService = require("./helpers/window-service");
 describe("git-center full-scan status service lifetime", () => {
   let main, hub, consumer, bars, providers, StatusBarView;
   const tiles = (bar) =>
@@ -11,7 +12,7 @@ describe("git-center full-scan status service lifetime", () => {
     StatusBarView = lumine.packages.getActivePackage("status-bar").mainModule.statusBar.constructor;
     await lumine.workspace.open();
     hub = new lumine.packages.serviceHub.constructor();
-    consumer = hub.consume("status-bar", "^1.0.0", (bar) => main.consumeStatusBar(bar));
+    consumer = hub.consume("status-bar", "^2.0.0", (bar) => main.consumeStatusBar(bar));
     bars = [];
     providers = [];
   });
@@ -30,7 +31,7 @@ describe("git-center full-scan status service lifetime", () => {
       bars.push(bar);
       jasmine.attachToDOM(bar.element);
     }
-    const provider = hub.provide("status-bar", "1.0.0", bar);
+    const provider = hub.provide("status-bar", "2.0.0", windowService(bar));
     providers.push(provider);
     return { bar, provider };
   };
@@ -76,7 +77,7 @@ describe("git-center full-scan status service lifetime", () => {
       main.deactivate();
       return tile;
     });
-    const lease = main.consumeStatusBar(bar);
+    const lease = main.consumeStatusBar(windowService(bar));
     await Promise.resolve();
     expect(tiles(bar).length).toBe(0);
     expect(lumine.tooltips.findTooltips(staged)).toEqual([]);
@@ -94,7 +95,7 @@ describe("git-center full-scan status service lifetime", () => {
       main.activate();
       currentView = main.getRepositoryListView();
       currentView.selectListHost.show();
-      currentLease = main.consumeStatusBar(entry.bar);
+      currentLease = main.consumeStatusBar(windowService(entry.bar));
       destroy();
     });
     main.deactivate();
