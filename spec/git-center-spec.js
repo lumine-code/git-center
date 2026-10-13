@@ -306,46 +306,23 @@ describe("git-center", () => {
     }
   });
 
-  it("describes the status-bar mouse actions in composite tooltips", () => {
-    const addComposite = spyOn(lumine.tooltips, "addComposite").and.callThrough();
+  it("describes tile state and the primary action in plain tooltips", () => {
+    const add = spyOn(lumine.tooltips, "add").and.callThrough();
     const repositoryView = mainModule.repositoryStatusView;
     const branchView = mainModule.branchStatusView;
-    const entriesFor = (element) =>
-      addComposite.calls
+    const titleFor = (element) =>
+      add.calls
         .allArgs()
         .filter(([target]) => target === element)
-        .at(-1)[1];
-
+        .at(-1)[1].title;
     repositoryView.update();
     branchView.update();
-
-    const repositoryEntries = entriesFor(repositoryView.element);
-    expect(repositoryEntries.find(({ keyBindingExtra }) => keyBindingExtra === "LMB")).toEqual(
-      jasmine.objectContaining({
-        title: "Select repository",
-        keyBindingCommand: "git-center:select-repository",
-      }),
-    );
-    expect(repositoryEntries.find(({ keyBindingExtra }) => keyBindingExtra === "MMB")).toEqual(
-      jasmine.objectContaining({
-        title: "Lock repository",
-        keyBindingCommand: "git-center:toggle-lock",
-      }),
-    );
-
-    const branchEntries = entriesFor(branchView.element);
-    expect(branchEntries.find(({ keyBindingExtra }) => keyBindingExtra === "LMB")).toEqual(
-      jasmine.objectContaining({
-        title: "Select branch",
-        keyBindingCommand: "git-center:select-branch",
-      }),
-    );
-    expect(branchEntries.some(({ keyBindingExtra }) => keyBindingExtra === "MMB")).toBe(false);
-
+    expect(titleFor(repositoryView.element)).toContain("Click to select a repository.");
+    expect(titleFor(branchView.element)).toContain("Click to select a branch.");
+    expect(titleFor(repositoryView.element)).not.toContain("LMB");
+    expect(titleFor(repositoryView.element)).not.toContain("MMB");
     lumine.repositories.setActiveRepository(repoA.repository, { pin: true });
-    expect(
-      entriesFor(repositoryView.element).find(({ keyBindingExtra }) => keyBindingExtra === "MMB"),
-    ).toEqual(jasmine.objectContaining({ title: "Unlock repository" }));
+    expect(titleFor(repositoryView.element)).toContain("Repository locked.");
   });
 
   it("animates the branch tile while remote operations are running", async () => {
