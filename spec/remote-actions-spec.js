@@ -66,6 +66,7 @@ describe("Git Center remote actions", () => {
       .map((item) => item.command)
       .filter(Boolean);
     expect(commands).toEqual([
+      "git-center:select-branch",
       "git-center:fetch",
       "git-center:pull",
       "git-center:push",

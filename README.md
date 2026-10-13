@@ -27,7 +27,9 @@ Commands available in `lumine-workspace`:
 - `git-center:select-repository`: pick the active repository,
 - `git-center:select-branch`: pick a branch of the active repository to check out,
 - `git-center:select-worktree`: pick a worktree of the active repository to open,
-- `git-center:toggle-lock`: pin or unpin the active repository so it stops or resumes following the active editor.
+- `git-center:toggle-lock`: pin or unpin the active repository so it stops or resumes following the active editor,
+- `git-center:previous-repository`: select the previous repository in name order,
+- `git-center:next-repository`: select the next repository in name order,
 - `git-center:fetch`: fetch the active branch's remote,
 - `git-center:pull`: pull the active branch's upstream,
 - `git-center:push`: push the active branch,
@@ -48,6 +50,8 @@ Commands available in the worktree picker:
 ## Usage
 
 See the [Version control guide](docs/version-control.md) for repository selection, worktrees, status indicators and the shared Git interfaces.
+
+Right-click the repository tile to select a repository or worktree, move to the previous or next repository, or toggle its lock. Right-click the branch tile to select a branch or run a remote action; the left click, middle click and wheel shortcuts use the same commands.
 
 ## Services
 

@@ -229,6 +229,7 @@ describe("git-center", () => {
   let repoB;
 
   beforeEach(async () => {
+    jasmine.attachToDOM(lumine.workspace.getElement());
     await lumine.packages.activatePackage("status-bar");
     mainModule = (await lumine.packages.activatePackage("git-center")).mainModule;
 
