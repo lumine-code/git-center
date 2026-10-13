@@ -45,6 +45,10 @@ Commands available in the worktree picker:
 - `git-center:move-worktree`: move the selected worktree to another directory,
 - `git-center:remove-worktree`: remove the selected worktree and its checkout.
 
+## Usage
+
+See the [Version control guide](docs/version-control.md) for repository selection, worktrees, status indicators and the shared Git interfaces.
+
 ## Services
 
 - `status-bar`: consumed to display the repository and branch tiles.
