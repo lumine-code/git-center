@@ -5,7 +5,9 @@
       "submenu": [
         {
           "label": "Select Git Repository…",
-          "command": "git-center:select-repository"
+          "command": "git-center:select-repository",
+          "group": "projects",
+          "order": 70
         }
       ]
     },
