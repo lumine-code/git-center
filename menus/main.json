@@ -61,8 +61,7 @@
       },
       {
         "label": "Select Branch…",
-        "command": "git-center:select-branch",
-        "mouseBindingLabel": "LMB"
+        "command": "git-center:select-branch"
       },
       {
         "type": "separator"

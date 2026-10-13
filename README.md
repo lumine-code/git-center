@@ -51,7 +51,7 @@ Commands available in the worktree picker:
 
 See the [Version control guide](docs/version-control.md) for repository selection, worktrees, status indicators and the shared Git interfaces.
 
-Right-click the repository tile to select a repository or worktree, move to the previous or next repository, or toggle its lock. Right-click the branch tile to select a branch or run a remote action; the left click, middle click and wheel shortcuts use the same commands.
+Left-click the repository tile to choose a repository, middle-click it to lock or unlock the selection, and use the mouse wheel to cycle repositories. Left-click the branch tile to choose a branch. Right-click either tile for its complete action menu.
 
 ## Services
 

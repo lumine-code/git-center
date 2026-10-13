@@ -22,12 +22,6 @@ describe("Git Center status action menus", () => {
       undefined,
       "git-center:toggle-lock",
     ]);
-    expect(
-      menu().find((item) => item.command === "git-center:select-repository").mouseBindingLabel,
-    ).toBe("LMB");
-    expect(menu().find((item) => item.command === "git-center:toggle-lock").mouseBindingLabel).toBe(
-      "MMB",
-    );
     const checked = spyOn(lumine.repositories, "isActiveRepositoryPinned").and.returnValue(true);
     expect(menu().find((item) => item.command === "git-center:toggle-lock").checked).toBe(true);
     checked.and.returnValue(false);
