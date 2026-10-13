@@ -1,6 +1,15 @@
 {
   "menu": [
     {
+      "label": "File",
+      "submenu": [
+        {
+          "label": "Select Git Repository…",
+          "command": "git-center:select-repository"
+        }
+      ]
+    },
+    {
       "label": "Packages",
       "submenu": [
         {
