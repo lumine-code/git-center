@@ -35,10 +35,11 @@ describe("git-center full-scan status service lifetime", () => {
     providers.push(provider);
     return { bar, provider };
   };
+  const ready = (bar) => main.statusBarConnections.get(bar)?.ready ?? Promise.resolve();
   it("shares identical service payloads until the final registration is withdrawn", async () => {
     const first = provide(),
       second = provide(first.bar);
-    await Promise.resolve();
+    await ready(first.bar);
     expect(tiles(first.bar).length).toBe(2);
     first.provider.dispose();
     expect(tiles(first.bar).length).toBe(2);
@@ -48,18 +49,18 @@ describe("git-center full-scan status service lifetime", () => {
   it("retires every manually connected provider on package deactivation", async () => {
     const first = provide(),
       second = provide();
-    await Promise.resolve();
+    await Promise.all([ready(first.bar), ready(second.bar)]);
     await lumine.packages.deactivatePackage("git-center");
     expect(tiles(first.bar).length).toBe(0);
     expect(tiles(second.bar).length).toBe(0);
   });
   it("keeps a later activation's exact same-payload tile alive when the old provider is withdrawn", async () => {
     const old = provide();
-    await Promise.resolve();
+    await ready(old.bar);
     await lumine.packages.deactivatePackage("git-center");
     main = (await lumine.packages.activatePackage("git-center")).mainModule;
     const current = provide(old.bar);
-    await Promise.resolve();
+    await ready(current.bar);
     old.provider.dispose();
     expect(tiles(current.bar).length).toBe(2);
     current.provider.dispose();
@@ -78,7 +79,7 @@ describe("git-center full-scan status service lifetime", () => {
       return tile;
     });
     const lease = main.consumeStatusBar(windowService(bar));
-    await Promise.resolve();
+    await ready(bar);
     expect(tiles(bar).length).toBe(0);
     expect(lumine.tooltips.findTooltips(staged)).toEqual([]);
     lease.dispose();
@@ -87,7 +88,7 @@ describe("git-center full-scan status service lifetime", () => {
   it("does not destroy a replacement picker and tiles created while an old tile is disposed", async () => {
     const oldView = main.getRepositoryListView();
     const entry = provide();
-    await Promise.resolve();
+    await ready(entry.bar);
     const tile = tiles(entry.bar)[0],
       destroy = tile.destroy.bind(tile);
     let currentView, currentLease;
@@ -99,7 +100,7 @@ describe("git-center full-scan status service lifetime", () => {
       destroy();
     });
     main.deactivate();
-    await Promise.resolve();
+    await ready(entry.bar);
     expect(currentView).not.toBe(oldView);
     expect(currentView.selectListHost.isVisible()).toBe(true);
     expect(tiles(entry.bar).length).toBe(2);
