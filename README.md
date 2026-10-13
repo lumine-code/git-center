@@ -16,6 +16,8 @@ Remote actions use the editor's shared push protection, force-push confirmation,
 - **Quick switching**: the mouse wheel over the repository tile cycles through repositories, middle click locks or unlocks the current selection, and the repository picker's Update Repositories action finds repositories again and refreshes their Git state.
 - **Remote synchronization**: the branch tile's context menu fetches, pulls, pushes, or force-pushes the active branch through the editor's repository operations.
 
+![Select a local branch and inspect the repository status.](.github/demo.png)
+
 ## Installation
 
 To install `git-center` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/git-center`.

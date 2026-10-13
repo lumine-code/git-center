@@ -1,0 +1,17 @@
+{
+  "title": "git-center",
+  "description": "Select a local branch and inspect the repository status.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "665fc385393beed7f0bc85c451a1f38577dd88b8",
+  "mode": "normal",
+  "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Select a local branch and inspect the repository status.",
+      "width": 1200,
+      "height": 600
+    }
+  ]
+}
