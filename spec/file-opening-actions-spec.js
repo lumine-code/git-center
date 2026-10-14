@@ -79,12 +79,13 @@ describe("Git Center worktree file gestures", () => {
   });
 
   for (const modifiers of [{ shiftKey: true }, { ctrlKey: true, shiftKey: true }]) {
-    it(`selects without opening for ${modifiers.ctrlKey ? "Ctrl+Shift" : "Shift"}-click`, async () => {
+    it(`resolves ${modifiers.ctrlKey ? "Ctrl+Shift" : "Shift"}-click through its Enter binding`, async () => {
       const list = view.selectList;
       const selected = list.getItems()[0];
       await list.selectNone();
       const open = spyOn(lumine.workspace, "open").and.callThrough();
       const action = spyOn(list, "runAction").and.callThrough();
+      const add = spyOn(lumine.project, "addPaths");
       const event = new MouseEvent("click", {
         bubbles: true,
         cancelable: true,
@@ -92,13 +93,21 @@ describe("Git Center worktree file gestures", () => {
         ...modifiers,
       });
       list.getElement().querySelector('[role="option"]').dispatchEvent(event);
-      await Promise.resolve();
+      await flushMicrotasks();
 
       expect(event.defaultPrevented).toBe(true);
       expect(list.getSelectedItem()).toBe(selected);
-      expect(action).not.toHaveBeenCalled();
       expect(open).not.toHaveBeenCalled();
-      expect(view.selectListHost.isVisible()).toBe(true);
+      if (modifiers.ctrlKey) {
+        expect(action).not.toHaveBeenCalled();
+        expect(add).not.toHaveBeenCalled();
+        expect(view.selectListHost.isVisible()).toBe(true);
+      } else {
+        expect(action).toHaveBeenCalledTimes(1);
+        expect(action.calls.mostRecent().args[0]).toBe("git-center:add-worktree-to-window");
+        expect(add).toHaveBeenCalledOnceWith([directory], { mustExist: true });
+        expect(view.selectListHost.isVisible()).toBe(false);
+      }
     });
   }
 
