@@ -129,18 +129,18 @@ describe("Git Center worktree file gestures", () => {
       "git-center:add-worktree-to-window",
     ])
       expect(actions).toContain(command);
-    for (const [keystrokes, command] of [
-      ["alt-enter", "git-center:open-worktree-with"],
-      ["ctrl-alt-enter", "git-center:open-worktree-external"],
-      ["alt-shift-enter", "git-center:show-worktree-in-folder"],
+    for (const target of [
+      view.selectList.getElement(),
+      view.selectList.getQueryEditor().getElement(),
     ])
-      expect(
-        lumine.keymaps.findKeyBindings({
-          target: view.selectList.getQueryEditor().getElement(),
-          keystrokes,
-        })[0]?.command,
-      ).toBe(command);
-    for (const keystrokes of ["shift-enter", "ctrl-shift-enter"])
+      for (const [keystrokes, command] of [
+        ["shift-enter", "git-center:add-worktree-to-window"],
+        ["alt-enter", "git-center:open-worktree-with"],
+        ["ctrl-alt-enter", "git-center:open-worktree-external"],
+        ["alt-shift-enter", "git-center:show-worktree-in-folder"],
+      ])
+        expect(lumine.keymaps.findKeyBindings({ target, keystrokes })[0]?.command).toBe(command);
+    for (const keystrokes of ["ctrl-shift-enter"])
       expect(
         lumine.keymaps
           .findKeyBindings({ target: view.selectList.getQueryEditor().getElement(), keystrokes })
