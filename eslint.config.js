@@ -33,6 +33,10 @@ module.exports = [
     },
   },
   {
+    files: ["demo/Version Control/signal.js"],
+    languageOptions: { sourceType: "module" },
+  },
+  {
     // The lint configuration itself requires devDependencies; it never ships.
     files: ["eslint.config.js"],
     rules: {
