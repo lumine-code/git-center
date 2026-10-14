@@ -1187,6 +1187,9 @@ describe("git-center", () => {
       actions = await actionsFor(worktree);
       expect(actions.map((action) => action.command)).toEqual([
         "git-center:open-worktree-in-this-window",
+        "git-center:open-worktree-with",
+        "git-center:open-worktree-external",
+        "git-center:show-worktree-in-folder",
         "git-center:open-worktree-in-new-window",
         "git-center:add-worktree-to-window",
         "git-center:lock-worktree",
