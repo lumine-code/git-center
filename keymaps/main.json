@@ -10,15 +10,17 @@
     "alt-g w": "git-center:select-worktree"
   },
 
-  // Shift+Enter adds the worktree; other placement and Git operations remain
-  // available in the actions list.
+  // Ctrl+Enter opens another window; Shift+Enter adds the worktree here.
+  // Other placement and Git operations remain in the actions list.
   ".git-center-worktree-list": {
+    "ctrl-enter": "git-center:open-worktree-in-new-window",
     "shift-enter": "git-center:add-worktree-to-window",
     "alt-enter": "git-center:open-worktree-with",
     "ctrl-alt-enter": "git-center:open-worktree-external",
     "alt-shift-enter": "git-center:show-worktree-in-folder"
   },
   ".git-center-worktree-list lumine-text-editor[mini]": {
+    "ctrl-enter": "git-center:open-worktree-in-new-window",
     "shift-enter": "git-center:add-worktree-to-window",
     "alt-enter": "git-center:open-worktree-with",
     "ctrl-alt-enter": "git-center:open-worktree-external",

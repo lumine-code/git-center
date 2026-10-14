@@ -38,24 +38,28 @@ describe("Git Center worktree file gestures", () => {
     fs.rmSync(directory, { recursive: true, force: true });
   });
 
-  async function click(modifiers) {
+  async function click(modifiers, itemId) {
     const done = new Promise((resolve) => {
       const lease = view.selectList.onDidFinishAction((result) => {
         lease.dispose();
         resolve(result);
       });
     });
-    view.selectList
-      .getElement()
-      .querySelector('[role="option"].selected')
-      .dispatchEvent(
-        new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          button: 0,
-          ...modifiers,
-        }),
-      );
+    const element = view.selectList.getElement();
+    const row =
+      itemId == null
+        ? element.querySelector('[role="option"].selected')
+        : element.querySelectorAll('[role="option"]')[
+            view.selectList.getDisplayedItems().findIndex((entry) => entry.id === itemId)
+          ];
+    row.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        ...modifiers,
+      }),
+    );
     return done;
   }
 
@@ -109,7 +113,27 @@ describe("Git Center worktree file gestures", () => {
     expect(show).toHaveBeenCalledOnceWith(directory);
   });
 
+  it("opens the Ctrl-clicked worktree in a new window without invoking another placement action", async () => {
+    await view.selectList.selectItemById("action:create");
+    const open = spyOn(lumine.application, "openWindow");
+    const change = spyOn(lumine.project, "setState");
+    const add = spyOn(lumine.project, "addPaths");
+    const primary = spyOn(view, "performAction");
+    const system = spyOn(external, "openExternal");
+    const result = await click({ ctrlKey: true }, item.id);
+
+    expect(result.status).toBe("success");
+    expect(result.command).toBe("git-center:open-worktree-in-new-window");
+    expect(open).toHaveBeenCalledOnceWith({ pathsToOpen: [directory], newWindow: true });
+    expect(change).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
+    expect(primary).not.toHaveBeenCalled();
+    expect(system).not.toHaveBeenCalled();
+  });
+
   it("keeps Create and Prune as domain actions without file alternatives", async () => {
+    const open = spyOn(lumine.application, "openWindow");
+    const primary = spyOn(view, "performAction");
     for (const [id, command] of [
       ["action:create", "git-center:create-worktree"],
       ["action:prune", "git-center:prune-worktrees"],
@@ -118,7 +142,11 @@ describe("Git Center worktree file gestures", () => {
       expect(view.selectList.getAvailableActions().map((action) => action.command)).toEqual([
         command,
       ]);
+      expect((await click({ ctrlKey: true })).status).toBe("unavailable");
+      expect(view.selectListHost.isVisible()).toBe(true);
     }
+    expect(open).not.toHaveBeenCalled();
+    expect(primary).not.toHaveBeenCalled();
   });
 
   it("keeps project placement actions in the menu while resolving the shared alternatives", () => {
@@ -134,6 +162,7 @@ describe("Git Center worktree file gestures", () => {
       view.selectList.getQueryEditor().getElement(),
     ])
       for (const [keystrokes, command] of [
+        ["ctrl-enter", "git-center:open-worktree-in-new-window"],
         ["shift-enter", "git-center:add-worktree-to-window"],
         ["alt-enter", "git-center:open-worktree-with"],
         ["ctrl-alt-enter", "git-center:open-worktree-external"],
