@@ -1,13 +1,43 @@
 {
   "menu": [
     {
-      "label": "File",
+      "label": "Git",
       "submenu": [
         {
-          "label": "Select Git Repository…",
+          "label": "Select Repository…",
           "command": "git-center:select-repository",
-          "group": "projects",
-          "order": 70
+          "group": "repository",
+          "order": 10
+        },
+        {
+          "label": "Select Branch…",
+          "command": "git-center:select-branch",
+          "group": "repository",
+          "order": 20
+        },
+        {
+          "label": "Select Worktree…",
+          "command": "git-center:select-worktree",
+          "group": "repository",
+          "order": 30
+        },
+        {
+          "label": "Fetch",
+          "command": "git-center:fetch",
+          "group": "remote",
+          "order": 10
+        },
+        {
+          "label": "Pull",
+          "command": "git-center:pull",
+          "group": "remote",
+          "order": 20
+        },
+        {
+          "label": "Force Push",
+          "command": "git-center:force-push",
+          "group": "remote",
+          "order": 40
         }
       ]
     },
@@ -18,15 +48,15 @@
           "label": "Git Center",
           "submenu": [
             {
-              "label": "Select Repository",
+              "label": "Select Repository…",
               "command": "git-center:select-repository"
             },
             {
-              "label": "Select Branch",
+              "label": "Select Branch…",
               "command": "git-center:select-branch"
             },
             {
-              "label": "Select Worktree",
+              "label": "Select Worktree…",
               "command": "git-center:select-worktree"
             },
             {
