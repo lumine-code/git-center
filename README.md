@@ -41,7 +41,6 @@ Commands available in the worktree picker:
 
 - `git-center:open-worktree-in-this-window`: replace this window's project with the selected worktree,
 - `git-center:open-worktree-with`: choose how to open the selected worktree folder,
-- `git-center:open-worktree-pending`: refuse pending text opening for a folder,
 - `git-center:open-worktree-external`: open the selected folder in its external application,
 - `git-center:show-worktree-in-folder`: reveal the selected folder in the system file manager,
 - `git-center:create-worktree`: open a path prompt for a new worktree in the active repository,

@@ -74,14 +74,29 @@ describe("Git Center worktree file gestures", () => {
     expect(choose).toHaveBeenCalledOnceWith({ path: directory, pane: view.openingPane });
   });
 
-  it("keeps Shift unavailable for folders without invoking the placement actions", async () => {
-    const open = spyOn(lumine.workspace, "open").and.callThrough();
-    const change = spyOn(lumine.project, "setState").and.resolveTo(false);
-    expect((await click({ shiftKey: true })).status).toBe("unavailable");
-    expect(open).not.toHaveBeenCalled();
-    expect(change).not.toHaveBeenCalled();
-    expect(view.selectListHost.isVisible()).toBe(true);
-  });
+  for (const modifiers of [{ shiftKey: true }, { ctrlKey: true, shiftKey: true }]) {
+    it(`selects without opening for ${modifiers.ctrlKey ? "Ctrl+Shift" : "Shift"}-click`, async () => {
+      const list = view.selectList;
+      const selected = list.getItems()[0];
+      await list.selectNone();
+      const open = spyOn(lumine.workspace, "open").and.callThrough();
+      const action = spyOn(list, "runAction").and.callThrough();
+      const event = new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        ...modifiers,
+      });
+      list.getElement().querySelector('[role="option"]').dispatchEvent(event);
+      await Promise.resolve();
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(list.getSelectedItem()).toBe(selected);
+      expect(action).not.toHaveBeenCalled();
+      expect(open).not.toHaveBeenCalled();
+      expect(view.selectListHost.isVisible()).toBe(true);
+    });
+  }
 
   it("routes external and reveal gestures through the registered handlers", async () => {
     const open = spyOn(external, "openExternal").and.resolveTo("");
@@ -89,7 +104,7 @@ describe("Git Center worktree file gestures", () => {
     expect((await click({ ctrlKey: true, altKey: true })).status).toBe("success");
     await view.selectListHost.show();
     await view.selectList.selectItemById(item.id);
-    expect((await click({ ctrlKey: true, shiftKey: true })).status).toBe("success");
+    expect((await click({ altKey: true, shiftKey: true })).status).toBe("success");
     expect(open).toHaveBeenCalledOnceWith(directory);
     expect(show).toHaveBeenCalledOnceWith(directory);
   });
@@ -116,9 +131,8 @@ describe("Git Center worktree file gestures", () => {
       expect(actions).toContain(command);
     for (const [keystrokes, command] of [
       ["alt-enter", "git-center:open-worktree-with"],
-      ["shift-enter", "git-center:open-worktree-pending"],
       ["ctrl-alt-enter", "git-center:open-worktree-external"],
-      ["ctrl-shift-enter", "git-center:show-worktree-in-folder"],
+      ["alt-shift-enter", "git-center:show-worktree-in-folder"],
     ])
       expect(
         lumine.keymaps.findKeyBindings({
@@ -126,5 +140,11 @@ describe("Git Center worktree file gestures", () => {
           keystrokes,
         })[0]?.command,
       ).toBe(command);
+    for (const keystrokes of ["shift-enter", "ctrl-shift-enter"])
+      expect(
+        lumine.keymaps
+          .findKeyBindings({ target: view.selectList.getQueryEditor().getElement(), keystrokes })
+          .some((binding) => binding.command.startsWith("git-center:")),
+      ).toBe(false);
   });
 });

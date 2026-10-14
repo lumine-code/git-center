@@ -13,14 +13,12 @@
   // Project placement and Git operations remain available in the actions list.
   ".git-center-worktree-list": {
     "alt-enter": "git-center:open-worktree-with",
-    "shift-enter": "git-center:open-worktree-pending",
     "ctrl-alt-enter": "git-center:open-worktree-external",
-    "ctrl-shift-enter": "git-center:show-worktree-in-folder"
+    "alt-shift-enter": "git-center:show-worktree-in-folder"
   },
   ".git-center-worktree-list lumine-text-editor[mini]": {
     "alt-enter": "git-center:open-worktree-with",
-    "shift-enter": "git-center:open-worktree-pending",
     "ctrl-alt-enter": "git-center:open-worktree-external",
-    "ctrl-shift-enter": "git-center:show-worktree-in-folder"
+    "alt-shift-enter": "git-center:show-worktree-in-folder"
   }
 }
