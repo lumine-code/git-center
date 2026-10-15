@@ -60,7 +60,7 @@
               "command": "git-center:select-worktree"
             },
             {
-              "label": "Toggle Lock",
+              "label": "Toggle Active Repository Lock",
               "command": "git-center:toggle-lock"
             },
             {
