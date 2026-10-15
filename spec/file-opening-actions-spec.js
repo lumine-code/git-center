@@ -65,11 +65,11 @@ describe("Git Center worktree file gestures", () => {
   }
 
   it("opens the chooser for the worktree folder on Alt-click", async () => {
-    await lumine.packages.deactivatePackage("open-with");
+    await lumine.packages.deactivatePackage("launcher");
     const choose = jasmine.createSpy("choose worktree opener");
     leases.add(
       lumine.commands.add("lumine-workspace", {
-        "open-with:toggle": (event) => {
+        "launcher:open": (event) => {
           event.stopPropagation();
           choose(event.detail);
         },
