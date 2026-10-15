@@ -62,7 +62,8 @@ describe("Git Center remote actions", () => {
 
   it("owns the branch tile's context menu without naming Git Panel commands", () => {
     const menu = require("../menus/main.json")["context-menu"];
-    const commands = menu[".git-center-branch.status-bar-item"]
+    expect(menu[".git-center-branch.status-bar-item"].commandTarget).toBe("focus");
+    const commands = menu[".git-center-branch.status-bar-item"].items
       .map((item) => item.command)
       .filter(Boolean);
     expect(commands).toEqual([
