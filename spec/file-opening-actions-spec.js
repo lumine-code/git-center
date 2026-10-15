@@ -171,7 +171,10 @@ describe("Git Center worktree file gestures", () => {
       view.selectList.getQueryEditor().getElement(),
     ])
       for (const [keystrokes, command] of [
-        ["ctrl-enter", "git-center:open-worktree-in-new-window"],
+        [
+          process.platform === "darwin" ? "cmd-enter" : "ctrl-enter",
+          "git-center:open-worktree-in-new-window",
+        ],
         ["shift-enter", "git-center:add-worktree-to-window"],
         ["alt-enter", "git-center:open-worktree-with"],
         ["ctrl-alt-enter", "git-center:open-worktree-external"],
