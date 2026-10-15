@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { CompositeDisposable } = require("lumine");
+const newWindowModifier = process.platform === "darwin" ? { metaKey: true } : { ctrlKey: true };
 
 describe("Git Center worktree file gestures", () => {
   let view, directory, item, leases, external;
@@ -122,14 +123,14 @@ describe("Git Center worktree file gestures", () => {
     expect(show).toHaveBeenCalledOnceWith(directory);
   });
 
-  it("opens the Ctrl-clicked worktree in a new window without invoking another placement action", async () => {
+  it("opens the worktree through its platform new-window gesture without another placement action", async () => {
     await view.selectList.selectItemById("action:create");
     const open = spyOn(lumine.application, "openWindow");
     const change = spyOn(lumine.project, "setState");
     const add = spyOn(lumine.project, "addPaths");
     const primary = spyOn(view, "performAction");
     const system = spyOn(external, "openExternal");
-    const result = await click({ ctrlKey: true }, item.id);
+    const result = await click(newWindowModifier, item.id);
 
     expect(result.status).toBe("success");
     expect(result.command).toBe("git-center:open-worktree-in-new-window");
@@ -151,7 +152,7 @@ describe("Git Center worktree file gestures", () => {
       expect(view.selectList.getAvailableActions().map((action) => action.command)).toEqual([
         command,
       ]);
-      expect((await click({ ctrlKey: true })).status).toBe("unavailable");
+      expect((await click(newWindowModifier)).status).toBe("unavailable");
       expect(view.selectListHost.isVisible()).toBe(true);
     }
     expect(open).not.toHaveBeenCalled();
