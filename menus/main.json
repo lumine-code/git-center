@@ -96,39 +96,42 @@
     }
   ],
   "context-menu": {
-    ".git-center-branch.status-bar-item": [
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Select Branch…",
-        "command": "git-center:select-branch"
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Fetch",
-        "command": "git-center:fetch"
-      },
-      {
-        "label": "Pull",
-        "command": "git-center:pull"
-      },
-      {
-        "type": "separator"
-      },
-      {
-        "label": "Push",
-        "command": "git-center:push"
-      },
-      {
-        "label": "Force Push",
-        "command": "git-center:force-push"
-      },
-      {
-        "type": "separator"
-      }
-    ]
+    ".git-center-branch.status-bar-item": {
+      "commandTarget": "focus",
+      "items": [
+        {
+          "type": "separator"
+        },
+        {
+          "label": "Select Branch…",
+          "command": "git-center:select-branch"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "label": "Fetch",
+          "command": "git-center:fetch"
+        },
+        {
+          "label": "Pull",
+          "command": "git-center:pull"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "label": "Push",
+          "command": "git-center:push"
+        },
+        {
+          "label": "Force Push",
+          "command": "git-center:force-push"
+        },
+        {
+          "type": "separator"
+        }
+      ]
+    }
   }
 }

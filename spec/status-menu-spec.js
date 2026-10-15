@@ -3,6 +3,7 @@ describe("Git Center status action menus", () => {
   beforeEach(async () => {
     jasmine.useRealClock();
     jasmine.attachToDOM(lumine.workspace.getElement());
+    lumine.workspace.getElement().focus();
     await lumine.packages.activatePackage("status-bar");
     main = (await lumine.packages.activatePackage("git-center")).mainModule;
     await conditionPromise(() => main.repositoryStatusView && main.branchStatusView);
