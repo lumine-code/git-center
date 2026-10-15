@@ -12,8 +12,8 @@
         {
           "label": "Select Branch…",
           "command": "git-center:select-branch",
-          "group": "repository",
-          "order": 20
+          "group": "branches",
+          "order": 5
         },
         {
           "label": "Select Worktree…",
