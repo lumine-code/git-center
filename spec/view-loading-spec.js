@@ -4,6 +4,17 @@ function deferred() {
   return { promise, resolve };
 }
 
+function picker(toggle) {
+  return {
+    toggle,
+    selectListHost: {
+      onDidOpen: () => ({ dispose() {} }),
+      onDidHide: () => ({ dispose() {} }),
+    },
+    destroy() {},
+  };
+}
+
 describe("Git Center native views", () => {
   let main;
   beforeEach(async () => {
@@ -57,7 +68,7 @@ describe("Git Center native views", () => {
     const window = fakeWindow();
     const importing = deferred();
     const toggle = jasmine.createSpy("toggle");
-    const View = jasmine.createSpy("View").and.returnValue({ toggle, destroy() {} });
+    const View = jasmine.createSpy("View").and.returnValue(picker(toggle));
     const loading = spyOn(main, "loadViews").and.returnValue(importing.promise);
     const first = main.togglePicker(window, "repositoryListView");
     const second = main.togglePicker(window, "repositoryListView");
@@ -105,7 +116,7 @@ describe("Git Center native views", () => {
   it("contains a picker load failure and retries a later command", async () => {
     const window = fakeWindow();
     const toggle = jasmine.createSpy("toggle");
-    const View = jasmine.createSpy("View").and.returnValue({ toggle, destroy() {} });
+    const View = jasmine.createSpy("View").and.returnValue(picker(toggle));
     const loading = spyOn(main, "loadViews").and.rejectWith(new Error("temporary picker failure"));
     await main.togglePicker(window, "repositoryListView");
     expect(View).not.toHaveBeenCalled();

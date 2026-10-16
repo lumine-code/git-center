@@ -1,4 +1,3 @@
-const mainModule = require("../lib/main");
 const { Disposable } = require("lumine");
 
 describe("Git Center command availability", () => {
@@ -15,7 +14,7 @@ describe("Git Center command availability", () => {
       commands = entries;
       return new Disposable();
     });
-    main = Object.create(mainModule);
+    main = Object.create(require("../lib/main"));
     main.activate();
   });
   afterEach(() => {
@@ -72,5 +71,51 @@ describe("Git Center command availability", () => {
     expect(available(commands, "push")).toBe(false);
     refs.initialized = false;
     expect(available(commands, "fetch")).toBe(true);
+  });
+});
+
+describe("Git Center picker availability after repositories close", () => {
+  let main;
+  beforeEach(async () => {
+    jasmine.attachToDOM(lumine.workspace.getElement());
+    main = (await lumine.packages.activatePackage("git-center")).mainModule;
+    spyOn(lumine.repositories, "getRepositories").and.returnValue([]);
+    spyOn(lumine.repositories, "getActiveRepository").and.returnValue(null);
+  });
+  afterEach(async () => {
+    await lumine.packages.deactivatePackage("git-center");
+    await lumine.workspace.discardEditorWindows();
+  });
+
+  for (const [command, field] of [
+    ["select-repository", "repositoryListView"],
+    ["select-branch", "branchListView"],
+    ["select-worktree", "worktreeListView"],
+  ]) {
+    it(`can close an open ${command} picker without a repository or document`, async () => {
+      const target = lumine.workspace.getElement();
+      const name = `git-center:${command}`;
+      expect(lumine.workspace.getActiveTextEditor()).toBeUndefined();
+      expect(lumine.commands.canDispatch(target, name)).toBe(false);
+      await main.togglePicker(null, field);
+      const host = main.pickerWindows.get(lumine.workspace.getMainWindow())[field].selectListHost;
+      await host.show();
+      expect(host.isVisible()).toBe(true);
+      const load = spyOn(main, "loadViews").and.throwError("availability must remain passive");
+      expect(lumine.commands.canDispatch(target, name)).toBe(true);
+      expect(load).not.toHaveBeenCalled();
+      const invalidate = spyOn(lumine.commands, "invalidateAvailability").and.callThrough();
+      await lumine.commands.dispatch(target, name);
+      expect(host.isVisible()).toBe(false);
+      expect(invalidate).toHaveBeenCalled();
+      expect(lumine.commands.canDispatch(target, name)).toBe(false);
+    });
+  }
+
+  it("keeps the visible-picker exception inside its own window", async () => {
+    await main.togglePicker(null, "repositoryListView");
+    const extra = await lumine.workspace.openEditorWindow({ show: false });
+    expect(main.isPickerVisible({ context: { window: extra } }, "repositoryListView")).toBe(false);
+    expect(main.isPickerVisible({}, "repositoryListView")).toBe(true);
   });
 });
