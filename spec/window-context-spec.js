@@ -10,13 +10,13 @@ describe("Git Center pickers in editor windows", () => {
   });
   it("retains independent repository queries and branch prompts in local documents", async () => {
     const workspace = lumine.workspace;
-    const first = await workspace.open();
+    await workspace.open();
     const extra = await workspace.openEditorWindow({ show: false });
     const second = workspace.buildTextEditor();
     extra.getEditorContainer().getActivePane().activateItem(second, { activatePane: true });
-    await lumine.commands.dispatch(first.getElement(), "git-center:select-repository");
-    await lumine.commands.dispatch(second.getElement(), "git-center:select-repository");
     const main = lumine.packages.getActivePackage("git-center").mainModule;
+    await main.togglePicker(workspace.getMainWindow(), "repositoryListView");
+    await main.togglePicker(extra, "repositoryListView");
     const local = main.getRepositoryListView(workspace.getMainWindow());
     const remote = main.getRepositoryListView(extra);
     expect(local.selectListHost.isVisible()).toBe(true);
