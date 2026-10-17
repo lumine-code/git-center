@@ -875,6 +875,44 @@ describe("git-center", () => {
     expect(setScrollTop).toHaveBeenCalledWith(53);
   });
 
+  it("awaits one kept-open checkout and refreshes the current branch before another choice", async () => {
+    const operations = repoA.repository.getOperations();
+    await operations.checkout("feature", { createNew: true });
+    await operations.checkout("main");
+    const view = mainModule.getBranchListView();
+    await view.toggle();
+    const list = view.selectList;
+    await list.runAction("select-list:toggle-keep-open");
+    await list.setQuery("feature");
+    await list.selectItemById("branch:feature");
+    let release;
+    const gate = new Promise((resolve) => (release = resolve));
+    const original = operations.checkout.bind(operations);
+    const checkout = spyOn(operations, "checkout").and.callFake(async (...args) => {
+      await gate;
+      return original(...args);
+    });
+    const first = list.confirmSelection();
+    const second = list.confirmSelection();
+    await conditionPromise(() => checkout.calls.count() === 1);
+    expect(list.isActionPending()).toBe(true);
+    release();
+    await Promise.all([first, second]);
+    await conditionPromise(
+      () => list.getItems().find((item) => item.branch === "feature")?.current,
+    );
+    expect(checkout).toHaveBeenCalledTimes(1);
+    expect(list.getQuery()).toBe("feature");
+    expect(list.getSelectedItem().id).toBe("branch:feature");
+    expect(view.selectListHost.isVisible()).toBe(true);
+
+    await list.setQuery("");
+    await list.selectItemById("branch:main");
+    await list.confirmSelection();
+    expect((await repoA.repository.ensureRefsSnapshot()).head.name).toBe("main");
+    expect(view.selectListHost.isVisible()).toBe(true);
+  });
+
   it("shows working-tree counts on the repository tile and in the picker", async () => {
     const operations = repoA.repository.getOperations();
     const filePath = (name) => path.join(repoA.workingDirectory, name);
@@ -1118,6 +1156,10 @@ describe("git-center", () => {
     expect(operations.checkout).toHaveBeenCalledWith("new-branch", { createNew: true });
 
     await branchListView.showReferenceList("create-from", repoA.repository);
+    expect(branchListView.referenceList.supportsKeepOpen()).toBe(false);
+    expect(
+      branchListView.referenceList.getAvailableActions().map(({ command }) => command),
+    ).not.toContain("select-list:toggle-keep-open");
     const main = branchListView.referenceList.getItems().find((item) => item.reference === "main");
     await branchListView.referenceList.selectItemById(main.id);
     await branchListView.referenceList.confirmSelection();
@@ -1129,6 +1171,7 @@ describe("git-center", () => {
     });
 
     await branchListView.showReferenceList("detach", repoA.repository);
+    expect(branchListView.referenceList.supportsKeepOpen()).toBe(true);
     const detachedMain = branchListView.referenceList
       .getItems()
       .find((item) => item.reference === "main");
