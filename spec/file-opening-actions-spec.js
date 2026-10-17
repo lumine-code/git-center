@@ -161,6 +161,7 @@ describe("Git Center worktree file gestures", () => {
       await view.selectList.selectItemById(id);
       expect(view.selectList.getAvailableActions().map((action) => action.command)).toEqual([
         command,
+        "select-list:toggle-keep-open",
       ]);
       expect(
         lumine.commands.canDispatch(

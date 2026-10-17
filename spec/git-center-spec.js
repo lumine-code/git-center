@@ -1176,11 +1176,17 @@ describe("git-center", () => {
       let actions = await actionsFor(
         selectList.getItems().find((item) => item.action === "create"),
       );
-      expect(actions.map((action) => action.command)).toEqual(["git-center:create-worktree"]);
+      expect(actions.map((action) => action.command)).toEqual([
+        "git-center:create-worktree",
+        "select-list:toggle-keep-open",
+      ]);
       expect(actions[0].primary).toBe(true);
 
       actions = await actionsFor(selectList.getItems().find((item) => item.action === "prune"));
-      expect(actions.map((action) => action.command)).toEqual(["git-center:prune-worktrees"]);
+      expect(actions.map((action) => action.command)).toEqual([
+        "git-center:prune-worktrees",
+        "select-list:toggle-keep-open",
+      ]);
       expect(actions[0].primary).toBe(true);
 
       const worktree = selectList.getItems().find((item) => item.path === worktreePath);
@@ -1195,6 +1201,7 @@ describe("git-center", () => {
         "git-center:lock-worktree",
         "git-center:move-worktree",
         "git-center:remove-worktree",
+        "select-list:toggle-keep-open",
       ]);
       expect(actions[0].primary).toBe(true);
       expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(false);
@@ -1205,7 +1212,9 @@ describe("git-center", () => {
       expect(actions.some((action) => action.command === "git-center:unlock-worktree")).toBe(true);
 
       await selectList.selectNone();
-      expect(selectList.getAvailableActions()).toEqual([]);
+      expect(selectList.getAvailableActions().map((action) => action.command)).toEqual([
+        "select-list:toggle-keep-open",
+      ]);
     });
 
     it("dispatches each semantic worktree primary action once", async () => {
