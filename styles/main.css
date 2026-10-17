@@ -119,3 +119,11 @@
     color: var(--text-color-error);
   }
 }
+
+/* Respect reduced motion while retaining visible status indicators. */
+@media (prefers-reduced-motion: reduce) {
+  .git-center-branch-icon:is(.animate-rotate, .animate-up, .animate-down)::before {
+    animation: none;
+    color: var(--text-color-warning);
+  }
+}
