@@ -899,7 +899,8 @@ describe("git-center", () => {
     release();
     await Promise.all([first, second]);
     await conditionPromise(
-      () => list.getItems().find((item) => item.branch === "feature")?.current,
+      () =>
+        !list.isFiltering() && list.getItems().find((item) => item.branch === "feature")?.current,
     );
     expect(checkout).toHaveBeenCalledTimes(1);
     expect(list.getQuery()).toBe("feature");
