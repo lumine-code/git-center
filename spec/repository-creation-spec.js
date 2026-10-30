@@ -41,9 +41,7 @@ describe("Git Center repository creation", () => {
   }
 
   function enter(dialog, field, value) {
-    const input = dialog.fields[field];
-    input.value = value;
-    input.dispatchEvent(new input.ownerDocument.defaultView.Event("input", { bubbles: true }));
+    dialog.fields[field].setText(value);
   }
 
   it("initializes the chosen new directory and adds it to the project after success", async () => {
@@ -100,13 +98,13 @@ describe("Git Center repository creation", () => {
       "/projects/git-panel",
     ]) {
       enter(dialog, "sourceURL", source);
-      expect(dialog.fields.destinationPath.value)
+      expect(dialog.fields.destinationPath.getText())
         .withContext(source)
         .toBe(path.join(temporaryDirectory, "git-panel"));
     }
     for (const source of ["https://github.com", ""]) {
       enter(dialog, "sourceURL", source);
-      expect(dialog.fields.destinationPath.value).withContext(source).toBe(temporaryDirectory);
+      expect(dialog.fields.destinationPath.getText()).withContext(source).toBe(temporaryDirectory);
     }
     dialog.cancel();
     expect(await promise).toBeNull();
@@ -119,10 +117,57 @@ describe("Git Center repository creation", () => {
     enter(dialog, "destinationPath", destinationPath);
     enter(dialog, "remoteName", "upstream");
     enter(dialog, "sourceURL", "https://example.invalid/second.git");
-    expect(dialog.fields.destinationPath.value).toBe(destinationPath);
-    expect(dialog.fields.remoteName.value).toBe("upstream");
+    expect(dialog.fields.destinationPath.getText()).toBe(destinationPath);
+    expect(dialog.fields.remoteName.getText()).toBe("upstream");
     dialog.cancel();
     await promise;
+  });
+
+  it("keeps invalid editor drafts without reading oversized fields or submitting them", async () => {
+    const clone = spyOn(lumine.repositories, "clone");
+    const { promise, dialog } = await openDialog("clone");
+    const source = dialog.fields.sourceURL;
+    const read = spyOn(source, "getText").and.callThrough();
+    source.setText("x".repeat(64 * 1024 + 1));
+    read.calls.reset();
+    dialog.validate();
+    await dialog.submit();
+    expect(read).not.toHaveBeenCalled();
+    expect(dialog.submitButton.disabled).toBe(true);
+    expect(dialog.status.textContent).toContain("64 Ki");
+    expect(source.getBuffer().getLength()).toBe(64 * 1024 + 1);
+    expect(clone).not.toHaveBeenCalled();
+    source.setText("https://example.invalid/first.git\nsecond");
+    expect(dialog.submitButton.disabled).toBe(true);
+    expect(dialog.status.textContent).toContain("single line");
+    source.setText("https://example.invalid/valid.git");
+    expect(dialog.submitButton.disabled).toBe(false);
+    expect(dialog.status.textContent).toBe("");
+    dialog.cancel();
+    expect(await promise).toBeNull();
+    expect(source.isDestroyed()).toBe(true);
+  });
+
+  it("cycles keyboard focus through mini fields and actions and keeps their accessible labels", async () => {
+    const { promise, dialog } = await openDialog("clone");
+    const source = dialog.fields.sourceURL.getElement();
+    const destination = dialog.fields.destinationPath.getElement();
+    const remote = dialog.fields.remoteName.getElement();
+    expect(source.getAttribute("aria-label")).toBe("Clone from");
+    expect(destination.getAttribute("aria-label")).toBe("Destination directory");
+    source.focus();
+    await lumine.commands.dispatch(source, "core:focus-next");
+    expect(destination.hasFocus()).toBe(true);
+    await lumine.commands.dispatch(destination, "core:focus-next");
+    expect(remote.hasFocus()).toBe(true);
+    await lumine.commands.dispatch(remote, "core:focus-next");
+    expect(document.activeElement).toBe(dialog.cancelButton);
+    await lumine.commands.dispatch(dialog.cancelButton, "core:focus-next");
+    expect(source.hasFocus()).toBe(true);
+    await lumine.commands.dispatch(source, "core:focus-previous");
+    expect(document.activeElement).toBe(dialog.cancelButton);
+    dialog.cancel();
+    expect(await promise).toBeNull();
   });
 
   it("keeps fields after a failed operation and retries only when submitted again", async () => {
@@ -136,8 +181,8 @@ describe("Git Center repository creation", () => {
     expect(initialize.calls.count()).toBe(1);
     expect(lumine.project.contains(directoryPath)).toBe(false);
     expect(dialog.closed).toBe(false);
-    expect(dialog.fields.destinationPath.value).toBe(directoryPath);
-    expect(dialog.fields.destinationPath.readOnly).toBe(false);
+    expect(dialog.fields.destinationPath.getText()).toBe(directoryPath);
+    expect(dialog.fields.destinationPath.isReadOnly()).toBe(false);
     expect(dialog.status.textContent).toContain("Permission denied");
     expect(dialog.submitButton.disabled).toBe(false);
     initialize.and.resolveTo(repository);
@@ -165,9 +210,9 @@ describe("Git Center repository creation", () => {
       await dialog.submit();
       expect(clone.calls.count()).toBe(1);
       expect(dialog.submitButton.disabled).toBe(true);
-      expect(dialog.fields.sourceURL.value).toBe(sourceURL);
-      expect(dialog.fields.destinationPath.value).toBe(destinationPath);
-      expect(dialog.fields.remoteName.value).toBe("upstream");
+      expect(dialog.fields.sourceURL.getText()).toBe(sourceURL);
+      expect(dialog.fields.destinationPath.getText()).toBe(destinationPath);
+      expect(dialog.fields.remoteName.getText()).toBe("upstream");
       expect(lumine.project.contains(destinationPath)).toBe(false);
       expect(dialog.status.textContent).toContain("Inspect the repository state");
       dialog.cancel();

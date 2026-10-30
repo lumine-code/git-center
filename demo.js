@@ -51,7 +51,9 @@ module.exports = {
       },
       ready() {
         return Boolean(
-          document.querySelector(".git-center-repository-dialog input[name='destinationPath']"),
+          document.querySelector(
+            ".git-center-repository-dialog lumine-text-editor[data-field='destinationPath']",
+          ),
         );
       },
     },
@@ -69,7 +71,9 @@ module.exports = {
       },
       ready() {
         return Boolean(
-          document.querySelector(".git-center-repository-dialog input[name='sourceURL']"),
+          document.querySelector(
+            ".git-center-repository-dialog lumine-text-editor[data-field='sourceURL']",
+          ),
         );
       },
     },

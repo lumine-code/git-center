@@ -74,6 +74,8 @@ describe("Git Center repository setup lifetime", () => {
       await flushMicrotasks();
       expect(dialog.panel.isVisible()).toBe(true);
       expect(dialog.pending).toBe(true);
+      expect(dialog.fields.destinationPath.isReadOnly()).toBe(true);
+      expect(dialog.element.getAttribute("aria-busy")).toBe("true");
       expect(dialog.closed).toBe(false);
       expect(settled).toBe(false);
       expect(main.repositorySetupRequests.has(window)).toBe(true);
@@ -82,6 +84,7 @@ describe("Git Center repository setup lifetime", () => {
       await submitted;
       expect(await promise).toBe(repository);
       expect(dialog.closed).toBe(true);
+      expect(dialog.fields.destinationPath.isDestroyed()).toBe(true);
       expect(main.repositorySetupRequests.has(window)).toBe(false);
     } finally {
       credentials.destroy();
