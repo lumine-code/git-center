@@ -127,3 +127,35 @@
     color: var(--text-color-warning);
   }
 }
+.git-center-repository-dialog {
+  padding: 1em;
+}
+
+.git-center-repository-dialog h1 {
+  margin: 0 0 1em;
+  font-size: 1.2em;
+}
+
+.git-center-repository-dialog label {
+  display: block;
+  margin-bottom: 1em;
+}
+
+.git-center-repository-dialog input,
+.git-center-repository-dialog select {
+  display: block;
+  width: 100%;
+  margin-top: 0.4em;
+}
+
+.git-center-repository-dialog-status {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: 0.75em;
+}
+
+.git-center-repository-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+}

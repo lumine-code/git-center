@@ -1,18 +1,18 @@
 {
   "title": "git-center",
   "description": "Select a local branch and inspect the repository status.",
-  "recordedOn": "2026-10-18",
-  "sourceRevision": "b8c754422ba910f8a7915983c4b544345d185a65",
-  "themeSourceRevision": "45b22049e87256e9327beb0b350e67fe81d7fc81",
+  "recordedOn": "2026-10-30",
+  "sourceRevision": "d74f15f0476ca48a78a0be34d483c9c9f8ffe14a",
+  "themeSourceRevision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
-  "recipeHash": "f9b1bcb112b64a2b287f84039bb2d63f0e83d73da71fed5db92eb57e7eb2dc6a",
+  "recipeHash": "73b2d4c5f70830290470bfe792a102d5e7eceacf738542c2cb701d90f5b4bbb8",
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.9.0",
-    "chrome": "152.0.7977.167",
+    "electron": "45.0.0",
+    "chrome": "156.0.8078.48",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -24,37 +24,41 @@
   "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "10950c83cb6d964aadbcf4036af67c6484c1341d",
+      "revision": "d41c6a65a32c669cef979a57261496305d4b2513",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "package": {
-      "revision": "b8c754422ba910f8a7915983c4b544345d185a65",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "d74f15f0476ca48a78a0be34d483c9c9f8ffe14a",
+      "dirty": true,
+      "workingTreeHash": "8bb1b5e2389d6c1bab38069b675a308670a2a2d787e8d835817b337f1ce6c44a"
     },
     "git-center": {
-      "revision": "b8c754422ba910f8a7915983c4b544345d185a65",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "d74f15f0476ca48a78a0be34d483c9c9f8ffe14a",
+      "dirty": true,
+      "workingTreeHash": "8bb1b5e2389d6c1bab38069b675a308670a2a2d787e8d835817b337f1ce6c44a"
     },
     "language-javascript": {
-      "revision": "721d40ef20e4ffda4125b375f50c908541fa7c08",
+      "revision": "bf635d04bbf9cf42239552df5455644c59b64b06",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "45b22049e87256e9327beb0b350e67fe81d7fc81",
+      "revision": "543b6786cc6eed20334c381eb322fc06e00a67b0",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "tree-view": {
-      "revision": "c1781b2f9680b1079e9c583431aed03e5b0992a3",
-      "dirty": false,
-      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "revision": "968cf8e9ddd41efecb09474c0a108d476f7ae33e",
+      "dirty": true,
+      "workingTreeHash": "feefdff8db86031c0ce31f6d085f9c0afae312a702e5e16b169a971b47a6366c"
     }
   },
   "fixtures": [
+    {
+      "file": "New Project/notes.md",
+      "sha256": "91b5a1c87d78fa98e09bcaeea0dd34353069fd5c7f7b53d1cc28e539c624fcf8"
+    },
     {
       "file": "Version Control/signal.js",
       "sha256": "f4bc0433b3039673ee81a519ec27ab3d4267bd3feea439139b4d204a36a92b84"
@@ -66,7 +70,21 @@
       "label": "Select a local branch and inspect the repository status.",
       "width": 1200,
       "height": 600,
-      "sha256": "0ea63385ab9993fb48d9bef7d963939eb6998cf7e880dabc0617f0f2b33dda47"
+      "sha256": "3ce67b1bf4d57d1b8b2bde48608657ade311bc55e809606b38ffb465779115c7"
+    },
+    {
+      "file": "demo-initialize.png",
+      "label": "Initialize a local repository in a chosen project folder.",
+      "width": 1200,
+      "height": 600,
+      "sha256": "2cca10dffc6c4238ee6e7d3148c9f1473bcde49eb986707ff06946844d412997"
+    },
+    {
+      "file": "demo-clone.png",
+      "label": "Choose a remote repository, clone destination, and remote name.",
+      "width": 1200,
+      "height": 600,
+      "sha256": "67da3fd443a8d62c521f3ecab7bb7ed50945b68c93afab272a9391ec045cd0da"
     }
   ]
 }

@@ -4,6 +4,21 @@
       "label": "Git",
       "submenu": [
         {
+          "label": "Create Repository",
+          "group": "repository",
+          "order": 40,
+          "submenu": [
+            {
+              "label": "Initialize Repository…",
+              "command": "git-center:initialize"
+            },
+            {
+              "label": "Clone Repository…",
+              "command": "git-center:clone"
+            }
+          ]
+        },
+        {
           "label": "Select Repository…",
           "command": "git-center:select-repository",
           "group": "repository",
@@ -47,6 +62,17 @@
         {
           "label": "Git Center",
           "submenu": [
+            {
+              "label": "Initialize Repository…",
+              "command": "git-center:initialize"
+            },
+            {
+              "label": "Clone Repository…",
+              "command": "git-center:clone"
+            },
+            {
+              "type": "separator"
+            },
             {
               "label": "Select Repository…",
               "command": "git-center:select-repository"
@@ -96,6 +122,18 @@
     }
   ],
   "context-menu": {
+    ".tree-view .entry": [
+      {
+        "type": "separator"
+      },
+      {
+        "label": "Initialize Repository…",
+        "command": "git-center:initialize"
+      },
+      {
+        "type": "separator"
+      }
+    ],
     ".git-center-branch.status-bar-item": {
       "commandTarget": "focus",
       "items": [

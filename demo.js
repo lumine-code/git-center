@@ -37,6 +37,42 @@ module.exports = {
         return Boolean(document.body.innerText.includes("data-validation"));
       },
     },
+    {
+      id: "initialize",
+      file: "demo-initialize.png",
+      caption: "Initialize a local repository in a chosen project folder.",
+      async run({ lumine, fixture, open }) {
+        const main = lumine.packages.getActivePackage("git-center").mainModule;
+        main.getBranchListView().selectListHost.cancel();
+        await open("New Project/notes.md");
+        void main.provideRepositorySetup().openInitializeDialog({
+          directoryPath: fixture("New Project"),
+        });
+      },
+      ready() {
+        return Boolean(
+          document.querySelector(".git-center-repository-dialog input[name='destinationPath']"),
+        );
+      },
+    },
+    {
+      id: "clone",
+      file: "demo-clone.png",
+      caption: "Choose a remote repository, clone destination, and remote name.",
+      async run({ lumine, fixture, project }) {
+        const main = lumine.packages.getActivePackage("git-center").mainModule;
+        void main.provideRepositorySetup().openCloneDialog({
+          sourceURL: project,
+          destinationPath: fixture("Cloned Project"),
+          remoteName: "origin",
+        });
+      },
+      ready() {
+        return Boolean(
+          document.querySelector(".git-center-repository-dialog input[name='sourceURL']"),
+        );
+      },
+    },
   ],
   async cleanup() {},
 };

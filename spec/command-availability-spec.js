@@ -23,11 +23,15 @@ describe("Git Center command availability", () => {
     lumine.repositories.getRepositories.and.callThrough();
     lumine.commands.add.and.callThrough();
   });
-  const available = (commands, name) => commands[`git-center:${name}`].isAvailable({});
+  const available = (commands, name) => commands[`git-center:${name}`].isAvailable?.({}) ?? true;
 
-  it("disables every repository action in an empty workspace", () => {
-    for (const name of Object.keys(commands))
-      expect(commands[name].isAvailable({})).withContext(name).toBe(false);
+  it("keeps setup and repository selection available in an empty workspace", () => {
+    for (const name of Object.keys(commands)) {
+      const setup = ["initialize", "clone", "select-repository"].includes(name.split(":")[1]);
+      expect(commands[name].isAvailable?.({}) ?? true)
+        .withContext(name)
+        .toBe(setup);
+    }
   });
 
   it("checks repository count and the active repository separately", () => {
@@ -96,7 +100,7 @@ describe("Git Center picker availability after repositories close", () => {
       const target = lumine.workspace.getElement();
       const name = `git-center:${command}`;
       expect(lumine.workspace.getActiveTextEditor()).toBeUndefined();
-      expect(lumine.commands.canDispatch(target, name)).toBe(false);
+      expect(lumine.commands.canDispatch(target, name)).toBe(command === "select-repository");
       await main.togglePicker(null, field);
       const host = main.pickerWindows.get(lumine.workspace.getMainWindow())[field].selectListHost;
       await host.show();
@@ -108,7 +112,7 @@ describe("Git Center picker availability after repositories close", () => {
       await lumine.commands.dispatch(target, name);
       expect(host.isVisible()).toBe(false);
       expect(invalidate).toHaveBeenCalled();
-      expect(lumine.commands.canDispatch(target, name)).toBe(false);
+      expect(lumine.commands.canDispatch(target, name)).toBe(command === "select-repository");
     });
   }
 

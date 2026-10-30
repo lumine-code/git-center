@@ -37,6 +37,11 @@
     "format:check": "prettier --check ."
   },
   "providedServices": {
+    "git-center.repository-setup": {
+      "versions": {
+        "1.0.0": "provideRepositorySetup"
+      }
+    },
     "background-tips.provider": {
       "versions": {
         "1.0.0": "provideBackgroundTips"
@@ -44,6 +49,11 @@
     }
   },
   "consumedServices": {
+    "tree-view.selection": {
+      "versions": {
+        "^1.0.0": "consumeTreeViewSelection"
+      }
+    },
     "status-bar": {
       "versions": {
         "^2.0.0": "consumeStatusBar"

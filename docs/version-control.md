@@ -27,6 +27,14 @@ Install **`git-center`** to show the active repository, working-tree counts, and
 
 The active repository normally follows whatever you are editing. `git-center:toggle-lock` pins it in place so it stops following, and the repository picker's `Auto` row hands it back.
 
+### Initialize and clone repositories
+
+Use **Git → Create Repository → Initialize Repository…** to initialize a local repository. A command invoked from Tree View uses the selected folder, or the parent folder of a selected file. Elsewhere it uses the center document's folder, including notebook and other file-backed views. Several selected folders require a choice; the form always lets you edit the destination. These commands remain available without an existing repository.
+
+**Clone Repository…** asks for the remote URL, destination directory and remote name. The destination follows the repository name and selected parent folder until you edit it. Both workflows add the resulting folder to the project and use the editor's shared Git operations.
+
+GitHub Panel separately offers **Create Repository…**, which creates a repository on GitHub and clones it locally, and **Publish Repository…**, which connects an existing local folder or repository to a new repository on GitHub. Publishing does not stage files or create the first commit.
+
 ### Worktrees
 
 A Git worktree is another checkout of the repository. `git-center:select-worktree` lists worktrees and opens one in this window; its actions can open one elsewhere, create, move, lock, unlock, or remove it. The branch picker marks branches checked out in another worktree and offers to open that checkout.

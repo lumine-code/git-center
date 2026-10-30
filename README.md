@@ -9,6 +9,7 @@ Remote actions use the editor's shared push protection, force-push confirmation,
 ## Features
 
 - **Repository tile**: shows the window's active repository and how many files are added, modified, deleted, or conflicted, or the focused folder dimmed when it is not part of a repository; `Auto` follows the active workspace item, while the optional Auto Lock Repository setting pins repositories chosen from the picker.
+- **Repository setup**: initialize a local repository from the selected tree folder or current document's folder, or clone a remote repository with its destination and remote name; both workflows are available in an empty window.
 - **Branch tile**: shows the active repository's branch and how far it has drifted from its upstream, and offers branch creation, start-point selection, and detached checkout; its picker groups local branches, remote branches, and tags with each ref's latest commit author, age, short hash, and subject.
 - **Worktree picker**: lists every worktree of the active repository with its branch, working-tree counts, and lock or prune state, and opens one in this window, alongside it, or in a new window; worktrees can also be created, moved, locked, removed, and pruned from the same list.
 - **Cross-worktree branches**: a branch already checked out in another worktree is marked as such and offers to open that worktree, since Git allows one worktree per branch and would refuse the checkout.
@@ -18,6 +19,10 @@ Remote actions use the editor's shared push protection, force-push confirmation,
 
 ![Select a local branch and inspect the repository status.](.github/demo.png)
 
+![Initialize a local repository in a chosen project folder.](.github/demo-initialize.png)
+
+![Choose a remote repository, clone destination, and remote name.](.github/demo-clone.png)
+
 ## Installation
 
 To install `git-center` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/git-center`.
@@ -26,6 +31,8 @@ To install `git-center` search for it in the Install pane of the Lumine settings
 
 Commands available in `lumine-workspace`:
 
+- `git-center:initialize`: initialize a local repository in a chosen folder,
+- `git-center:clone`: clone a remote repository into a chosen folder,
 - `git-center:select-repository`: pick the active repository,
 - `git-center:select-branch`: pick a branch of the active repository to check out,
 - `git-center:select-worktree`: pick a worktree of the active repository to open,
@@ -60,6 +67,8 @@ Left-click the repository tile to choose a repository, middle-click it to lock o
 
 ## Services
 
+- [`git-center.repository-setup`](docs/git-center.repository-setup.md): provided to open repository initialization and cloning workflows.
+- `tree-view.selection`: consumed to capture selected paths when a setup command originates in the tree.
 - `status-bar`: consumed to display the repository and branch tiles.
 
 ## Contributing
