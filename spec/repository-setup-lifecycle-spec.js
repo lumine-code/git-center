@@ -36,6 +36,22 @@ describe("Git Center repository setup lifetime", () => {
     expect(dialog.closed).toBe(true);
   });
 
+  it("dismisses an idle outside click without starting a repository operation", async () => {
+    const initialize = spyOn(lumine.repositories, "initialize");
+    const { promise, dialog } = await openDialog();
+    const outside = document.createElement("button");
+    document.body.append(outside);
+    try {
+      outside.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      expect(await promise).toBeNull();
+      expect(dialog.closed).toBe(true);
+      expect(initialize).not.toHaveBeenCalled();
+    } finally {
+      outside.remove();
+    }
+  });
+
   it("resolves cancellation and restores the repository picker when its form crumb is popped", async () => {
     const window = lumine.workspace.getMainWindow();
     await main.togglePicker(window, "repositoryListView");
