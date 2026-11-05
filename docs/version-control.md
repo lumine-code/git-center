@@ -1,13 +1,13 @@
 # Version control guide
 
-Lumine has built-in repository support and bundles `git-diff`; additional Git interfaces are optional packages.
+Lumine has built-in repository support and bundles `git-chunk`; additional Git interfaces are optional packages.
 
 ## Diff markers in the gutter
 
-The **`git-diff`** package marks lines in the editor gutter that have been added, edited, or deleted since the last commit. You can:
+The **`git-chunk`** package marks lines in the editor gutter that have been added, edited, or deleted since the last commit. You can:
 
-- move between changes with `git-diff:move-to-next-diff` and `git-diff:move-to-previous-diff`, and
-- open a searchable list of every change in the file with `git-diff:toggle-diff-list`.
+- move between changes with `git-chunk:move-to-next-diff` and `git-chunk:move-to-previous-diff`, and
+- open a searchable list of every change in the file with `git-chunk:toggle-diff-list`.
 
 The markers can be shown as colored icons or colored gutter marks — choose in the package's settings. Added, edited and deleted changes keep their usual colors; staged changes use muted colors with readable contrast in One Night and One Day. The scrollbar and minimap use the same staging colors.
 

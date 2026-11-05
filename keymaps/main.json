@@ -1,6 +1,6 @@
 {
   // Part of the `alt-g` family, shared with git-panel (alt-g g), github-panel
-  // (alt-g h), git-diff, git-command and open-repository. `s` for switch —
+  // (alt-g h), git-chunk, git-command and open-repository. `s` for switch —
   // `b` selects a branch, `c` opens the centre of the repository context, and
   // `w` selects a worktree. The lock stays in the menu and command palette
   // because another letter says nothing.
