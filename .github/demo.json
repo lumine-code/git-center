@@ -327,14 +327,154 @@
       "label": "Initialize a local repository in a chosen project folder.",
       "width": 1200,
       "height": 600,
-      "sha256": "8f21e2ec9651a1e36891e50804e963df78d87945580f035e225455d8b313a67a"
+      "sha256": "1f9dc2d5390a4f8f038ab334ccfc0fae73d167335e37be00c2495ec93cc3c0cb",
+      "capture": {
+        "recordedOn": "2026-11-05",
+        "sourceRevision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+        "themeSourceRevision": "6e7e9f93cc5b0612b4631e06d0b80e5ca88a7302",
+        "mode": "normal",
+        "fontSettings": "default",
+        "scenario": "demo.js",
+        "recipeHash": "a2f88af1f2ce895b5bfc6a4815d4e32bd7804edc220a82b09377970850865970",
+        "environment": {
+          "platform": "win32",
+          "arch": "x64",
+          "electron": "45.2.3",
+          "chrome": "156.0.8078.80",
+          "devicePixelRatio": 1,
+          "locale": "en-GB",
+          "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+          "fontSize": 14,
+          "themes": ["one-day-syntax", "one-day-ui"]
+        },
+        "viewport": { "width": 1200, "height": 600 },
+        "cornerRadius": 10,
+        "privacy": { "version": 1, "location": "neutral", "textChecked": true },
+        "sources": {
+          "editor": {
+            "revision": "55e7d15c5f86ea3ff86c21a599f40b4a753e71fd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "package": {
+            "revision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "git-center": {
+            "revision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "language-gfm": {
+            "revision": "dbdfa0d7eb55a25a9cd6e4b7f8b388bc5d99dc6f",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "language-javascript": {
+            "revision": "54db3b4027a3b98ddc9911f0d6cf1a4a20c2cfb4",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "one-theme": {
+            "revision": "6e7e9f93cc5b0612b4631e06d0b80e5ca88a7302",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "tree-view": {
+            "revision": "d682de12e7a1a8501450add1c21d7c1674a75ee5",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          }
+        },
+        "fixtures": [
+          {
+            "file": "New Project/notes.md",
+            "sha256": "91b5a1c87d78fa98e09bcaeea0dd34353069fd5c7f7b53d1cc28e539c624fcf8"
+          },
+          {
+            "file": "Version Control/signal.js",
+            "sha256": "f4bc0433b3039673ee81a519ec27ab3d4267bd3feea439139b4d204a36a92b84"
+          }
+        ]
+      }
     },
     {
       "file": "demo-clone.png",
       "label": "Choose a remote repository, clone destination, and remote name.",
       "width": 1200,
       "height": 600,
-      "sha256": "a9bc0adcf46dd58a9511534bdc3928ae05915bdd93c92365cae4e85aa398ae0b"
+      "sha256": "cc8ef528e691061f65b9047a2e0e7780a84c3d03e78e6f838dc67576a363f368",
+      "capture": {
+        "recordedOn": "2026-11-05",
+        "sourceRevision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+        "themeSourceRevision": "6e7e9f93cc5b0612b4631e06d0b80e5ca88a7302",
+        "mode": "normal",
+        "fontSettings": "default",
+        "scenario": "demo.js",
+        "recipeHash": "a2f88af1f2ce895b5bfc6a4815d4e32bd7804edc220a82b09377970850865970",
+        "environment": {
+          "platform": "win32",
+          "arch": "x64",
+          "electron": "45.2.3",
+          "chrome": "156.0.8078.80",
+          "devicePixelRatio": 1,
+          "locale": "en-GB",
+          "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
+          "fontSize": 14,
+          "themes": ["one-day-syntax", "one-day-ui"]
+        },
+        "viewport": { "width": 1200, "height": 600 },
+        "cornerRadius": 10,
+        "privacy": { "version": 1, "location": "neutral", "textChecked": true },
+        "sources": {
+          "editor": {
+            "revision": "55e7d15c5f86ea3ff86c21a599f40b4a753e71fd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "package": {
+            "revision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "git-center": {
+            "revision": "1925fc558db1ad915d88dc9c2b0e4903379d3ccd",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "language-gfm": {
+            "revision": "dbdfa0d7eb55a25a9cd6e4b7f8b388bc5d99dc6f",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "language-javascript": {
+            "revision": "54db3b4027a3b98ddc9911f0d6cf1a4a20c2cfb4",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "one-theme": {
+            "revision": "6e7e9f93cc5b0612b4631e06d0b80e5ca88a7302",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          },
+          "tree-view": {
+            "revision": "d682de12e7a1a8501450add1c21d7c1674a75ee5",
+            "dirty": false,
+            "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+          }
+        },
+        "fixtures": [
+          {
+            "file": "New Project/notes.md",
+            "sha256": "91b5a1c87d78fa98e09bcaeea0dd34353069fd5c7f7b53d1cc28e539c624fcf8"
+          },
+          {
+            "file": "Version Control/signal.js",
+            "sha256": "f4bc0433b3039673ee81a519ec27ab3d4267bd3feea439139b4d204a36a92b84"
+          }
+        ]
+      }
     }
   ]
 }
