@@ -1394,8 +1394,8 @@ describe("git-center", () => {
       branchListView.confirmCheckoutItem(feature);
       expect(operations.checkout).not.toHaveBeenCalled();
       const [message, options] = lumine.notifications.addWarning.calls.mostRecent().args;
-      expect(message).toBe("'feature' is checked out in another worktree");
-      expect(options.description).toContain(worktreePath);
+      expect(message).toBe("The branch is checked out in another worktree");
+      expect(options.detail).toBe(`Branch: feature\nPath: ${worktreePath}`);
       expect(options.buttons.map((button) => button.text)).toEqual([
         "Open Worktree",
         "Open in New Window",
