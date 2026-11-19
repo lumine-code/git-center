@@ -182,7 +182,7 @@ describe("git-center repository switch items", () => {
     });
     spyOn(lumine.repositories, "getActiveRepository").and.returnValue(unborn);
 
-    const items = await buildRepositoryItems([regular, detached, unborn]);
+    const items = buildRepositoryItems([regular, detached, unborn]);
 
     expect(items.length).toBe(3);
     expect(items[0].repository).toBe(unborn);
@@ -196,24 +196,23 @@ describe("git-center repository switch items", () => {
     expect(items.find((item) => item.repository === detached).branch).toBe("1234567");
     expect(items.find((item) => item.repository === unborn).branch).toBe("future");
     for (const itemRepository of [regular, detached, unborn]) {
-      expect(itemRepository.ensureStatusSnapshot).toHaveBeenCalledTimes(1);
+      expect(itemRepository.ensureStatusSnapshot).not.toHaveBeenCalled();
       expect(itemRepository.ensureRefsSnapshot).not.toHaveBeenCalled();
       expect(itemRepository.getRefsSnapshot).not.toHaveBeenCalled();
     }
   });
 
-  it("keeps a repository reachable when its status fails to load", async () => {
+  it("keeps a repository reachable before its status loads", () => {
     const broken = repository("broken", { initialized: false, files: [] });
-    broken.ensureStatusSnapshot.and.returnValue(Promise.reject(new Error("status failed")));
     spyOn(lumine.repositories, "getActiveRepository").and.returnValue(null);
 
-    const items = await buildRepositoryItems([broken]);
+    const items = buildRepositoryItems([broken]);
 
     expect(items.length).toBe(1);
     expect(items[0]).toEqual(
       jasmine.objectContaining({
         repository: broken,
-        branch: "(no branch)",
+        branch: null,
         current: true,
         status: null,
         upstream: null,
@@ -475,6 +474,8 @@ describe("git-center", () => {
   });
 
   it("switches the active repository through the repository picker", async () => {
+    const coldA = !repoA.repository.getStatusSnapshot().initialized;
+    const coldB = !repoB.repository.getStatusSnapshot().initialized;
     const ensureStatusA = spyOn(repoA.repository, "ensureStatusSnapshot").and.callThrough();
     const ensureStatusB = spyOn(repoB.repository, "ensureStatusSnapshot").and.callThrough();
     const ensureRefsA = spyOn(repoA.repository, "ensureRefsSnapshot").and.callThrough();
@@ -500,8 +501,8 @@ describe("git-center", () => {
         group: "List",
       }),
     );
-    expect(ensureStatusA).toHaveBeenCalledTimes(1);
-    expect(ensureStatusB).toHaveBeenCalledTimes(1);
+    expect(ensureStatusA).toHaveBeenCalledTimes(Number(coldA));
+    expect(ensureStatusB).toHaveBeenCalledTimes(Number(coldB));
     expect(ensureRefsA).not.toHaveBeenCalled();
     expect(ensureRefsB).not.toHaveBeenCalled();
     expect(refreshRefsA).not.toHaveBeenCalled();
@@ -625,6 +626,52 @@ describe("git-center", () => {
     await repositoryListView.requestRefresh.calls.mostRecent().returnValue;
 
     expect(repositoryListView.requestRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("publishes names before cold reads and incrementally hydrates bounded batches", async () => {
+    const pending = [];
+    const repositories = Array.from({ length: 8 }, (_, index) => {
+      let status = { initialized: false };
+      return {
+        getWorkingDirectory: () => path.join(os.tmpdir(), "cold-repo-" + index),
+        getStatusSnapshot: () => status,
+        onDidChangeStatusSnapshot: () => ({ dispose() {} }),
+        ensureStatusSnapshot() {
+          const { promise, resolve } = Promise.withResolvers();
+          pending.push(() => {
+            status = {
+              ...statusSnapshot([]),
+              head: { name: "main", detached: false, unborn: false },
+            };
+            resolve(status);
+          });
+          return promise;
+        },
+      };
+    });
+    spyOn(lumine.repositories, "getRepositories").and.returnValue(repositories);
+    const view = mainModule.getRepositoryListView();
+    const reload = spyOn(view.selectList, "reload").and.callThrough();
+    await view.toggle();
+    try {
+      const cold = view.selectList.getItems().filter(({ repository }) => repository);
+      expect(cold.map(({ repoName }) => repoName)).toEqual(
+        Array.from({ length: 8 }, (_, index) => "cold-repo-" + index),
+      );
+      expect(cold.every(({ branch }) => branch === null)).toBeTrue();
+      expect(pending.length).toBe(3);
+
+      pending[0]();
+      await conditionPromise(() => view.selectList.getItems()[1].branch === "main");
+      expect(pending.length).toBe(4);
+      expect(view.selectList.getItems()[2]).toBe(cold[1]);
+      expect(reload).not.toHaveBeenCalled();
+    } finally {
+      view.hide();
+      for (const resolve of pending) resolve();
+    }
+    await Promise.resolve();
+    expect(pending.length).toBe(4);
   });
 
   it("finishes a cold status load after the repository picker closes", async () => {
